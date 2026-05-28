@@ -669,7 +669,7 @@ function renderBreathingScreen() {
   }
 
   // Wait for screen fade-in before starting preview
-  setTimeout(runPreview, 700);
+  previewTimer = setTimeout(runPreview, 700);
 
   document.getElementById('breath-ready').addEventListener('click', () => {
     clearTimeout(previewTimer);
