@@ -388,31 +388,87 @@ function renderBreathingScreen() {
   document.getElementById('screen-breathing').innerHTML = `
     <div class="col">
       <div class="breath-wrap">
-        <div class="breath-instruction" id="breath-instruction"></div>
+        <div class="breath-instruction" id="breath-instruction">
+          Adjust the pace until it feels right.
+        </div>
         <div class="breath-circle exhaling" id="breath-circle"></div>
         <div class="breath-label" id="breath-label"></div>
         <div class="breath-counter" id="breath-counter"></div>
       </div>
-      <div class="breath-speed-wrap">
-        <label class="breath-speed-label" for="breath-speed">
-          Breath pace — <span id="breath-speed-val">4</span>s per phase
-        </label>
-        <input id="breath-speed" type="range" min="2" max="8" value="4" step="1" class="breath-speed-slider">
+
+      <div id="breath-prep">
+        <div class="breath-speed-wrap">
+          <label class="breath-speed-label" for="breath-speed">
+            Breath pace — <span id="breath-speed-val">4</span>s per phase
+          </label>
+          <input id="breath-speed" type="range" min="2" max="8" value="4" step="1" class="breath-speed-slider">
+        </div>
+        <div class="btn-row">
+          <button class="btn" id="breath-ready">Begin breathing →</button>
+        </div>
       </div>
-      <div id="breathing-next-row" class="btn-row" style="display:none">
-        <button class="btn" id="breathing-next">Next round →</button>
-      </div>
-      <div id="breathing-done-row" class="btn-row" style="display:none">
-        <button class="btn" id="breathing-done">Continue →</button>
+
+      <div id="breath-practice" style="display:none">
+        <div id="breathing-next-row" class="btn-row" style="display:none">
+          <button class="btn" id="breathing-next">Next round →</button>
+        </div>
+        <div id="breathing-done-row" class="btn-row" style="display:none">
+          <button class="btn" id="breathing-done">Continue →</button>
+        </div>
       </div>
     </div>
   `;
 
+  // Live label update
   document.getElementById('breath-speed').addEventListener('input', e => {
     document.getElementById('breath-speed-val').textContent = e.target.value;
   });
 
-  runBreathingRound(0);
+  // Continuously loop inhale/exhale so user can preview speed
+  let previewTimer = null;
+  let previewPhase = 'exhaling';
+
+  function runPreview() {
+    const circle = document.getElementById('breath-circle');
+    const label  = document.getElementById('breath-label');
+    if (!circle || !label) return;
+    const d = getBreathDuration();
+    if (previewPhase === 'exhaling') {
+      previewPhase = 'inhaling';
+      circle.style.transition = `transform ${d / 1000}s ease-in-out`;
+      label.textContent = 'Inhale';
+      circle.classList.remove('exhaling');
+      circle.classList.add('inhaling');
+    } else {
+      previewPhase = 'exhaling';
+      circle.style.transition = `transform ${d / 1000}s ease-in-out`;
+      label.textContent = 'Exhale';
+      circle.classList.remove('inhaling');
+      circle.classList.add('exhaling');
+    }
+    previewTimer = setTimeout(runPreview, d);
+  }
+
+  // Wait for screen fade-in before starting preview
+  setTimeout(runPreview, 700);
+
+  document.getElementById('breath-ready').addEventListener('click', () => {
+    clearTimeout(previewTimer);
+
+    // Snap circle back to resting state without transition
+    const circle = document.getElementById('breath-circle');
+    circle.style.transition = 'none';
+    circle.classList.remove('inhaling');
+    circle.classList.add('exhaling');
+
+    document.getElementById('breath-prep').style.display = 'none';
+    document.getElementById('breath-practice').style.display = 'block';
+    document.getElementById('breath-instruction').textContent = '';
+    document.getElementById('breath-label').textContent = '';
+
+    // One frame so the circle settles before the first breath starts
+    requestAnimationFrame(() => runBreathingRound(0));
+  });
 }
 
 function getBreathDuration() {
