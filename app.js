@@ -145,7 +145,10 @@ function renderSetupScreen() {
         <textarea id="setup-desc" rows="2"></textarea>
       </div>
       <div class="field">
-        <label for="setup-url">GitHub repository URL</label>
+        <label for="setup-url">
+          GitHub repository URL
+          <span class="muted" style="text-transform:none; letter-spacing:0"> — recommended. The app will open it automatically when you begin.</span>
+        </label>
         <input id="setup-url" type="url" placeholder="https://github.com/you/repo">
       </div>
       <div class="field">
@@ -169,11 +172,11 @@ function renderSetupScreen() {
     const githubUrl  = document.getElementById('setup-url').value.trim();
     const pat        = document.getElementById('setup-pat').value.trim();
 
-    if (!name || !githubUrl) {
-      alert('Please enter a project name and GitHub URL.');
+    if (!name) {
+      alert('Please enter a project name.');
       return;
     }
-    if (!parseGitHubUrl(githubUrl)) {
+    if (githubUrl && !parseGitHubUrl(githubUrl)) {
       alert('Please use a valid GitHub URL: https://github.com/owner/repo');
       return;
     }
@@ -204,7 +207,7 @@ function renderSettingsOverlay() {
         <div class="project-item">
           <div class="project-item-info">
             <strong>${escapeHtml(p.name)}</strong>
-            <div class="muted">${escapeHtml(p.githubUrl)}</div>
+            <div class="muted">${p.githubUrl ? escapeHtml(p.githubUrl) : 'No repository URL'}</div>
           </div>
           <div class="project-item-actions">
             <button class="btn btn-ghost btn-sm" onclick="confirmDeleteProject('${escapeHtml(p.id)}')">Delete</button>
@@ -235,8 +238,11 @@ function renderSettingsOverlay() {
           <textarea id="new-desc" rows="2"></textarea>
         </div>
         <div class="field">
-          <label for="new-url">GitHub URL</label>
-          <input id="new-url" type="url">
+          <label for="new-url">
+            GitHub URL
+            <span class="muted" style="text-transform:none; letter-spacing:0"> — recommended</span>
+          </label>
+          <input id="new-url" type="url" placeholder="https://github.com/you/repo">
         </div>
         <div class="btn-row">
           <button class="btn" onclick="submitNewProject()">Add</button>
@@ -280,8 +286,8 @@ function submitNewProject() {
   const name        = document.getElementById('new-name').value.trim();
   const description = document.getElementById('new-desc').value.trim();
   const githubUrl   = document.getElementById('new-url').value.trim();
-  if (!name || !githubUrl) { alert('Name and GitHub URL are required.'); return; }
-  if (!parseGitHubUrl(githubUrl)) { alert('Please use a valid GitHub URL.'); return; }
+  if (!name) { alert('Name is required.'); return; }
+  if (githubUrl && !parseGitHubUrl(githubUrl)) { alert('Please use a valid GitHub URL.'); return; }
   appState = addProject(appState, { name, description, githubUrl });
   saveState(appState);
   renderSettingsOverlay();
@@ -768,12 +774,14 @@ async function renderProjectsScreen() {
     card.innerHTML = `
       <h3>${escapeHtml(project.name)}</h3>
       ${project.description ? `<p class="desc">${escapeHtml(project.description)}</p>` : ''}
-      <ul class="commits-list" id="commits-${project.id}">
+      ${project.githubUrl ? `<ul class="commits-list" id="commits-${project.id}">
         <li><span class="commits-loading">Loading recent commits…</span></li>
-      </ul>
+      </ul>` : ''}
     `;
     card.addEventListener('click', () => selectProject(project.id));
     container.appendChild(card);
+
+    if (!project.githubUrl) continue;
 
     fetchCommits(project.githubUrl, appState.githubPAT).then(commits => {
       const list = document.getElementById(`commits-${project.id}`);
@@ -803,18 +811,18 @@ function renderBeginScreen(projectId) {
   const project   = appState.projects.find(p => p.id === projectId);
   if (!project) return;
   const smallStep = currentSession.direction.smallStep || 'Begin.';
-  const safeUrl   = /^https?:\/\//i.test(project.githubUrl) ? project.githubUrl : '#';
+  const safeUrl = /^https?:\/\//i.test(project.githubUrl) ? project.githubUrl : '';
 
   document.getElementById('screen-begin').innerHTML = `
     <div class="col">
       <p class="begin-project">${escapeHtml(project.name)}</p>
       <p class="begin-step">${escapeHtml(smallStep)}</p>
-      <div class="btn-row">
+      ${safeUrl ? `<div class="btn-row">
         <a class="btn"
            href="${escapeHtml(safeUrl)}"
            target="_blank"
            rel="noopener noreferrer">Open repository →</a>
-      </div>
+      </div>` : ''}
     </div>
   `;
 }
