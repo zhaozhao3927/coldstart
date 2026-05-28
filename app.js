@@ -18,8 +18,8 @@ function saveState(state) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-function addProject(state, { name, description, githubUrl }) {
-  const project = { id: crypto.randomUUID(), name, description, githubUrl, tasks: [] };
+function addProject(state, { name, description, githubUrl, localPath }) {
+  const project = { id: crypto.randomUUID(), name, description, githubUrl, localPath: localPath || '', tasks: [] };
   return { ...state, projects: [...state.projects, project] };
 }
 
@@ -121,6 +121,7 @@ async function fetchCommits(githubUrl, pat) {
 
 // ── Router ─────────────────────────────────────────────────────────────────
 let appState = loadState();
+const commitCache = {};
 
 const currentSession = {
   direction: { mainFocus: '', tasks: '', smallStep: '' },
@@ -184,6 +185,13 @@ function renderSetupScreen() {
         <input id="setup-url" type="url" placeholder="https://github.com/you/repo">
       </div>
       <div class="field">
+        <label for="setup-localpath">
+          Local folder path
+          <span class="muted" style="text-transform:none; letter-spacing:0"> — optional. Opens a terminal here when you begin.</span>
+        </label>
+        <input id="setup-localpath" type="text" placeholder="C:\Users\you\projects\my-repo" autocomplete="off">
+      </div>
+      <div class="field">
         <label for="setup-pat">
           GitHub Personal Access Token
           <span class="muted" style="text-transform:none; letter-spacing:0"> — optional, for private repos</span>
@@ -199,10 +207,11 @@ function renderSetupScreen() {
   `;
 
   document.getElementById('setup-submit').addEventListener('click', () => {
-    const name       = document.getElementById('setup-name').value.trim();
+    const name        = document.getElementById('setup-name').value.trim();
     const description = document.getElementById('setup-desc').value.trim();
-    const githubUrl  = document.getElementById('setup-url').value.trim();
-    const pat        = document.getElementById('setup-pat').value.trim();
+    const githubUrl   = document.getElementById('setup-url').value.trim();
+    const localPath   = document.getElementById('setup-localpath').value.trim();
+    const pat         = document.getElementById('setup-pat').value.trim();
 
     if (!name) {
       alert('Please enter a project name.');
@@ -213,7 +222,7 @@ function renderSetupScreen() {
       return;
     }
 
-    appState = addProject(appState, { name, description, githubUrl });
+    appState = addProject(appState, { name, description, githubUrl, localPath });
     if (pat) appState = { ...appState, githubPAT: pat };
     saveState(appState);
 
@@ -297,6 +306,10 @@ function renderSettingsOverlay() {
             <label>GitHub URL <span class="muted" style="text-transform:none; letter-spacing:0">— recommended</span></label>
             <input type="url" id="edit-url-${p.id}" value="${escapeHtml(p.githubUrl || '')}" placeholder="https://github.com/you/repo">
           </div>
+          <div class="field">
+            <label>Local folder path <span class="muted" style="text-transform:none; letter-spacing:0">— opens terminal here when you begin</span></label>
+            <input type="text" id="edit-localpath-${p.id}" value="${escapeHtml(p.localPath || '')}" placeholder="C:\\Users\\you\\projects\\my-repo" autocomplete="off">
+          </div>
           <div class="btn-row" style="margin-top:1rem">
             <button class="btn" onclick="saveEditProject('${p.id}')">Save</button>
             <button class="btn btn-ghost" onclick="toggleEditProject('${p.id}')">Cancel</button>
@@ -332,6 +345,10 @@ function renderSettingsOverlay() {
             <span class="muted" style="text-transform:none; letter-spacing:0"> — recommended</span>
           </label>
           <input id="new-url" type="url" placeholder="https://github.com/you/repo">
+        </div>
+        <div class="field">
+          <label for="new-localpath">Local folder path <span class="muted" style="text-transform:none; letter-spacing:0">— opens terminal here when you begin</span></label>
+          <input id="new-localpath" type="text" placeholder="C:\\Users\\you\\projects\\my-repo" autocomplete="off">
         </div>
         <div class="btn-row">
           <button class="btn" onclick="submitNewProject()">Add</button>
@@ -374,9 +391,10 @@ function saveEditProject(id) {
   const name        = document.getElementById(`edit-name-${id}`).value.trim();
   const description = document.getElementById(`edit-desc-${id}`).value.trim();
   const githubUrl   = document.getElementById(`edit-url-${id}`).value.trim();
+  const localPath   = document.getElementById(`edit-localpath-${id}`).value.trim();
   if (!name) { alert('Name is required.'); return; }
   if (githubUrl && !parseGitHubUrl(githubUrl)) { alert('Please use a valid GitHub URL.'); return; }
-  appState = updateProject(appState, id, { name, description, githubUrl });
+  appState = updateProject(appState, id, { name, description, githubUrl, localPath });
   saveState(appState);
   renderSettingsOverlay();
 }
@@ -446,9 +464,10 @@ function submitNewProject() {
   const name        = document.getElementById('new-name').value.trim();
   const description = document.getElementById('new-desc').value.trim();
   const githubUrl   = document.getElementById('new-url').value.trim();
+  const localPath   = document.getElementById('new-localpath').value.trim();
   if (!name) { alert('Name is required.'); return; }
   if (githubUrl && !parseGitHubUrl(githubUrl)) { alert('Please use a valid GitHub URL.'); return; }
-  appState = addProject(appState, { name, description, githubUrl });
+  appState = addProject(appState, { name, description, githubUrl, localPath });
   saveState(appState);
   renderSettingsOverlay();
 }
@@ -778,17 +797,7 @@ function renderDirectionScreen() {
           <textarea id="dir-tasks" rows="3"></textarea>
         </div>
         <div class="btn-row">
-          <button class="btn" id="dir-s2-next">Next →</button>
-        </div>
-      </div>
-
-      <div id="dir-s3" style="display:none">
-        <div class="field">
-          <label for="dir-step">What is one small, achievable first step?</label>
-          <input id="dir-step" type="text" autocomplete="off">
-        </div>
-        <div class="btn-row">
-          <button class="btn" id="dir-s3-next">Continue →</button>
+          <button class="btn" id="dir-s2-next">Continue →</button>
         </div>
       </div>
     </div>
@@ -805,23 +814,12 @@ function renderDirectionScreen() {
 
   document.getElementById('dir-s2-next').addEventListener('click', () => {
     currentSession.direction.tasks = document.getElementById('dir-tasks').value.trim();
-    document.getElementById('dir-s2').style.display = 'none';
-    document.getElementById('dir-s3').style.display = 'block';
-    document.getElementById('dir-step').focus();
-  });
-
-  document.getElementById('dir-s3-next').addEventListener('click', () => {
-    currentSession.direction.smallStep = document.getElementById('dir-step').value.trim();
     renderEmotionCheckScreen();
     showScreen('screen-emotion');
   });
 
   document.getElementById('dir-focus').addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('dir-s1-next').click();
-  });
-
-  document.getElementById('dir-step').addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('dir-s3-next').click();
   });
 }
 
@@ -945,8 +943,16 @@ function renderEmotionCheckScreen() {
       </p>
       <div class="btn-row" style="margin-top:1.5rem">
         <button class="btn" id="review-next">Look closer →</button>
+        <button class="btn btn-ghost" id="review-skip">I'm ready to begin</button>
       </div>
     `;
+    document.getElementById('review-skip').addEventListener('click', () => {
+      currentSession.emotionCheck = emotionValues;
+      appState = saveSession(appState, currentSession);
+      saveState(appState);
+      review.style.display = 'none';
+      showClosing();
+    });
     document.getElementById('review-next').addEventListener('click', () => {
       review.style.display = 'none';
       showReframe(0);
@@ -1047,6 +1053,7 @@ async function renderProjectsScreen() {
     if (!project.githubUrl) continue;
 
     fetchCommits(project.githubUrl, appState.githubPAT).then(commits => {
+      commitCache[project.id] = commits;
       const list = document.getElementById(`commits-${project.id}`);
       if (!list) return;
       list.innerHTML = commits.length === 0
@@ -1063,29 +1070,99 @@ async function renderProjectsScreen() {
 
 function selectProject(projectId) {
   currentSession.chosenProjectId = projectId;
-  appState = saveSession(appState, currentSession);
-  saveState(appState);
-  renderBeginScreen(projectId);
+  renderFirstStepScreen(projectId, commitCache[projectId] || []);
   showScreen('screen-begin');
 }
 
+// ── Step 5b: First step input ──────────────────────────────────────────────
+function renderFirstStepScreen(projectId, commits) {
+  const project = appState.projects.find(p => p.id === projectId);
+  if (!project) return;
+
+  const commitsHtml = commits.length > 0 ? `
+    <div class="begin-commits" style="margin-bottom:2rem">
+      <p class="begin-commits-label">Recent commits</p>
+      ${commits.map(c => `
+        <div class="begin-commit-row">
+          <span class="commit-date">${escapeHtml(c.date)}</span>
+          <span class="begin-commit-msg">${escapeHtml(c.message)}</span>
+        </div>`).join('')}
+    </div>` : '';
+
+  document.getElementById('screen-begin').innerHTML = `
+    <div class="col">
+      <p class="begin-project">${escapeHtml(project.name)}</p>
+      ${commitsHtml}
+      <div class="field">
+        <label for="first-step-input" style="font-family:var(--font-serif); font-size:1.05rem; text-transform:none; letter-spacing:0; color:var(--text); line-height:1.7">
+          What is one small, concrete first step you will take?
+        </label>
+        <input id="first-step-input" type="text" autocomplete="off" style="margin-top:0.75rem">
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="first-step-next">Begin →</button>
+      </div>
+    </div>
+  `;
+
+  setTimeout(() => document.getElementById('first-step-input').focus(), 50);
+
+  const proceed = () => {
+    currentSession.direction.smallStep = document.getElementById('first-step-input').value.trim() || 'Begin.';
+    appState = saveSession(appState, currentSession);
+    saveState(appState);
+    renderBeginScreen(projectId, commits);
+  };
+  document.getElementById('first-step-next').addEventListener('click', proceed);
+  document.getElementById('first-step-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') proceed();
+  });
+}
+
 // ── Step 6: Begin ──────────────────────────────────────────────────────────
-function renderBeginScreen(projectId) {
+function renderBeginScreen(projectId, commits) {
   const project   = appState.projects.find(p => p.id === projectId);
   if (!project) return;
   const smallStep = currentSession.direction.smallStep || 'Begin.';
-  const safeUrl = /^https?:\/\//i.test(project.githubUrl) ? project.githubUrl : '';
+  const safeUrl   = /^https?:\/\//i.test(project.githubUrl) ? project.githubUrl : '';
+  const localPath = project.localPath || '';
+
+  const commitsHtml = (commits && commits.length > 0) ? `
+    <div class="begin-commits">
+      <p class="begin-commits-label">Recent commits</p>
+      ${commits.map(c => `
+        <div class="begin-commit-row">
+          <span class="commit-date">${escapeHtml(c.date)}</span>
+          <span class="begin-commit-msg">${escapeHtml(c.message)}</span>
+        </div>`).join('')}
+    </div>` : '';
+
+  const terminalHtml = localPath ? `
+    <div class="terminal-block">
+      <p class="terminal-label">Open a terminal here</p>
+      <div class="terminal-cmd-row">
+        <code class="terminal-cmd" id="terminal-cmd-text">cd "${escapeHtml(localPath)}"</code>
+        <button class="terminal-copy-btn" onclick="copyTerminalCmd('${escapeHtml(localPath)}')" title="Copy command">⎘</button>
+      </div>
+      ${localPath ? `<a class="terminal-vscode-link" href="vscode://file/${encodeURIComponent(localPath)}" title="Open in VS Code">Open in VS Code →</a>` : ''}
+    </div>` : '';
 
   document.getElementById('screen-begin').innerHTML = `
     <div class="col">
       <p class="begin-project">${escapeHtml(project.name)}</p>
       <p class="begin-step">${escapeHtml(smallStep)}</p>
-      ${safeUrl ? `<div class="btn-row">
-        <a class="btn"
-           href="${escapeHtml(safeUrl)}"
-           target="_blank"
-           rel="noopener noreferrer">Open repository →</a>
+      ${commitsHtml}
+      ${terminalHtml}
+      ${safeUrl ? `<div class="btn-row" style="margin-top:1.5rem">
+        <a class="btn" href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer">Open repository →</a>
       </div>` : ''}
     </div>
   `;
+}
+
+function copyTerminalCmd(localPath) {
+  navigator.clipboard.writeText(`cd "${localPath}"`).then(() => {
+    const btn = document.querySelector('.terminal-copy-btn');
+    if (btn) { btn.textContent = '✓'; setTimeout(() => { btn.textContent = '⎘'; }, 1500); }
+  });
 }

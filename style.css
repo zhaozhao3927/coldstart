@@ -451,6 +451,89 @@ label {
 
 .task-history-toggle:hover { color: var(--text); }
 
+/* ── Begin screen — commits + terminal ────────────────────────────────── */
+.begin-commits {
+  margin-top: 1.5rem;
+}
+
+.begin-commits-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.begin-commit-row {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  padding: 3px 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.begin-commit-msg {
+  flex: 1;
+  line-height: 1.5;
+}
+
+.terminal-block {
+  margin-top: 2rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: #f2f0ed;
+}
+
+.terminal-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+}
+
+.terminal-cmd-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.terminal-cmd {
+  flex: 1;
+  font-family: 'Courier New', monospace;
+  font-size: 0.88rem;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.terminal-copy-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 2px 8px;
+  flex-shrink: 0;
+  transition: background 200ms ease, color 200ms ease;
+}
+
+.terminal-copy-btn:hover { background: var(--accent-light); color: var(--text); }
+
+.terminal-vscode-link {
+  display: inline-block;
+  margin-top: 0.6rem;
+  font-size: 0.8rem;
+  color: var(--accent-dark);
+  text-decoration: none;
+  letter-spacing: 0.03em;
+}
+
+.terminal-vscode-link:hover { text-decoration: underline; }
+
 /* ── Emotion reflection ────────────────────────────────────────────────── */
 .reflection-block {
   margin-bottom: 1.5rem;
