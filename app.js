@@ -424,10 +424,10 @@ function runBreathingRound(roundIndex) {
         };
       } else {
         document.getElementById('breathing-done-row').style.display = 'flex';
-        document.getElementById('breathing-done').addEventListener('click', () => {
+        document.getElementById('breathing-done').onclick = () => {
           renderGroundingScreen();
           showScreen('screen-grounding');
-        });
+        };
       }
       return;
     }
@@ -437,15 +437,20 @@ function runBreathingRound(roundIndex) {
     const label   = document.getElementById('breath-label');
     const counter = document.getElementById('breath-counter');
 
+    if (!circle || !label || !counter) return;
+
     counter.textContent = `${round.name} · breath ${count} of ${TOTAL}`;
     label.textContent   = 'Inhale';
     circle.classList.remove('exhaling');
     circle.classList.add('inhaling');
 
     setTimeout(() => {
-      label.textContent = 'Exhale';
-      circle.classList.remove('inhaling');
-      circle.classList.add('exhaling');
+      const c = document.getElementById('breath-circle');
+      const l = document.getElementById('breath-label');
+      if (!c || !l) return;
+      l.textContent = 'Exhale';
+      c.classList.remove('inhaling');
+      c.classList.add('exhaling');
       setTimeout(nextBreath, 4000);
     }, 4000);
   })();
