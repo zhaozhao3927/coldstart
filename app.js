@@ -121,8 +121,10 @@ async function fetchCommits(githubUrl, pat) {
 
 // ── Router ─────────────────────────────────────────────────────────────────
 let appState = loadState();
-const commitCache = {};
-const navHistory  = [];
+const commitCache    = {};
+const navHistory     = [];
+let   currentRound   = 0;   // tracks active breathing round for skip
+let   breathTimeout  = null; // active breathing timeout, cancelled on skip
 
 const currentSession = {
   direction: { mainFocus: '', tasks: '', smallStep: '' },
@@ -624,7 +626,6 @@ function renderBreathingScreen() {
         </div>
         <div class="btn-row">
           <button class="btn" id="breath-ready">Begin breathing →</button>
-          <button class="btn btn-ghost" id="breath-skip-prep">Skip breathing entirely →</button>
         </div>
       </div>
 
@@ -636,7 +637,7 @@ function renderBreathingScreen() {
           <button class="btn" id="breathing-done">Continue →</button>
         </div>
         <div class="btn-row" style="margin-top:0.5rem">
-          <button class="btn btn-ghost" id="breath-skip-practice">Skip breathing entirely →</button>
+          <button class="btn btn-ghost" id="breath-skip-round">Skip this round →</button>
         </div>
       </div>
     </div>
@@ -693,15 +694,21 @@ function renderBreathingScreen() {
     requestAnimationFrame(() => runBreathingRound(0));
   });
 
-  document.getElementById('breath-skip-prep').addEventListener('click', () => {
-    clearTimeout(previewTimer);
-    renderGroundingScreen();
-    showScreen('screen-grounding');
-  });
-
-  document.getElementById('breath-skip-practice').addEventListener('click', () => {
-    renderGroundingScreen();
-    showScreen('screen-grounding');
+  document.getElementById('breath-skip-round').addEventListener('click', () => {
+    clearTimeout(breathTimeout);
+    const next = currentRound + 1;
+    const circle = document.getElementById('breath-circle');
+    if (circle) {
+      circle.style.transition = 'none';
+      circle.classList.remove('inhaling');
+      circle.classList.add('exhaling');
+    }
+    if (next >= BREATHING_ROUNDS.length) {
+      renderGroundingScreen();
+      showScreen('screen-grounding');
+    } else {
+      requestAnimationFrame(() => runBreathingRound(next));
+    }
   });
 }
 
@@ -711,12 +718,23 @@ function getBreathDuration() {
 }
 
 function runBreathingRound(roundIndex) {
-  const round = BREATHING_ROUNDS[roundIndex];
-  const TOTAL = 5;
+  currentRound = roundIndex;
+  const round  = BREATHING_ROUNDS[roundIndex];
+  const TOTAL  = 5;
 
   document.getElementById('breath-instruction').innerText = round.instruction;
   document.getElementById('breathing-next-row').style.display = 'none';
   document.getElementById('breathing-done-row').style.display = 'none';
+
+  // Update skip button label to show what you'll skip to
+  const skipBtn = document.getElementById('breath-skip-round');
+  if (skipBtn) {
+    if (roundIndex < BREATHING_ROUNDS.length - 1) {
+      skipBtn.textContent = `Skip to ${BREATHING_ROUNDS[roundIndex + 1].name} →`;
+    } else {
+      skipBtn.textContent = 'Skip to next step →';
+    }
+  }
 
   let count = 0;
 
@@ -756,7 +774,7 @@ function runBreathingRound(roundIndex) {
     circle.classList.remove('exhaling');
     circle.classList.add('inhaling');
 
-    setTimeout(() => {
+    breathTimeout = setTimeout(() => {
       const c = document.getElementById('breath-circle');
       const l = document.getElementById('breath-label');
       if (!c || !l) return;
@@ -765,7 +783,7 @@ function runBreathingRound(roundIndex) {
       l.textContent = 'Exhale';
       c.classList.remove('inhaling');
       c.classList.add('exhaling');
-      setTimeout(nextBreath, d);
+      breathTimeout = setTimeout(nextBreath, d);
     }, duration);
   })();
 }
