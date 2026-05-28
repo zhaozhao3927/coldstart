@@ -331,20 +331,18 @@ label {
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: rgba(107, 140, 95, 0.15);
+  background: radial-gradient(circle at 40% 38%,
+    rgba(107, 140, 95, 0.32) 0%,
+    rgba(107, 140, 95, 0.10) 52%,
+    transparent 74%
+  );
   border: 0.5px solid var(--moss);
-  transition: transform 4s ease-in-out, background 4s ease-in-out;
+  transition: transform 4s ease-in-out;
   will-change: transform;
 }
 
-.breath-circle.inhaling {
-  transform: scale(1.9);
-  background: rgba(107, 140, 95, 0.22);
-}
-.breath-circle.exhaling {
-  transform: scale(1);
-  background: rgba(107, 140, 95, 0.15);
-}
+.breath-circle.inhaling  { transform: scale(1.9); }
+.breath-circle.exhaling  { transform: scale(1); }
 
 .breath-label {
   font-size: 0.62rem;
