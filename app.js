@@ -659,3 +659,50 @@ function goToProjects() {
   renderProjectsScreen();
   showScreen('screen-projects');
 }
+
+// ── Step 5: Choose Project ─────────────────────────────────────────────────
+async function renderProjectsScreen() {
+  document.getElementById('screen-projects').innerHTML = `
+    <div class="col">
+      <p class="eyebrow">Choose one project</p>
+      <div id="project-cards" class="project-cards"></div>
+    </div>
+  `;
+
+  const container = document.getElementById('project-cards');
+
+  for (const project of appState.projects) {
+    const card = document.createElement('div');
+    card.className = 'project-card';
+    card.innerHTML = `
+      <h3>${escapeHtml(project.name)}</h3>
+      ${project.description ? `<p class="desc">${escapeHtml(project.description)}</p>` : ''}
+      <ul class="commits-list" id="commits-${project.id}">
+        <li><span class="commits-loading">Loading recent commits…</span></li>
+      </ul>
+    `;
+    card.addEventListener('click', () => selectProject(project.id));
+    container.appendChild(card);
+
+    fetchCommits(project.githubUrl, appState.githubPAT).then(commits => {
+      const list = document.getElementById(`commits-${project.id}`);
+      if (!list) return;
+      list.innerHTML = commits.length === 0
+        ? '<li><span class="commits-loading">No recent commits found.</span></li>'
+        : commits.map(c => `
+            <li>
+              <span class="commit-date">${escapeHtml(c.date)}</span>
+              <span>${escapeHtml(c.message)}</span>
+            </li>
+          `).join('');
+    });
+  }
+}
+
+function selectProject(projectId) {
+  currentSession.chosenProjectId = projectId;
+  appState = saveSession(appState, currentSession);
+  saveState(appState);
+  renderBeginScreen(projectId);
+  showScreen('screen-begin');
+}
