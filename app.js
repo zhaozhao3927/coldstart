@@ -490,8 +490,12 @@ function renderGroundingScreen() {
 
     promptEl.style.opacity = '0';
     btnRow.style.opacity   = '0';
+    promptEl.textContent = GROUNDING_PROMPTS[i];
 
-    setTimeout(() => { promptEl.textContent = GROUNDING_PROMPTS[i]; promptEl.style.opacity = '1'; }, 300);
+    // double-rAF ensures the browser commits opacity:0 before transitioning to 1
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      promptEl.style.opacity = '1';
+    }));
 
     setTimeout(() => {
       btnRow.style.opacity = '1';
@@ -505,7 +509,7 @@ function renderGroundingScreen() {
           showPrompt(++idx);
         }
       };
-    }, 5000);
+    }, 1500);
   }
 
   showPrompt(0);
