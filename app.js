@@ -572,3 +572,90 @@ function renderDirectionScreen() {
     if (e.key === 'Enter') document.getElementById('dir-s3-next').click();
   });
 }
+
+// ── Step 4b: Emotion Check ─────────────────────────────────────────────────
+const EMOTION_PROMPTS = [
+  "What's the reason you want to postpone?",
+  "And if that's true... what are you afraid might happen?",
+  "And if that happened... what would it really mean about you?"
+];
+const EMOTION_KEYS = ['reason', 'fear', 'meaning'];
+
+function renderEmotionCheckScreen() {
+  document.getElementById('screen-emotion').innerHTML = `
+    <div id="emotion-gate" class="col" style="text-align:center">
+      <p class="ritual-text" style="opacity:1; margin-bottom:2.5rem;">
+        Is there anything making you want to put this off?
+      </p>
+      <div class="btn-row" style="justify-content:center">
+        <button class="btn btn-ghost" id="emotion-yes">Yes, let's look at it</button>
+        <button class="btn" id="emotion-no">No, I'm ready</button>
+      </div>
+    </div>
+
+    <div id="emotion-prompts" class="col" style="display:none"></div>
+
+    <div id="emotion-closing" class="col"
+         style="display:none; text-align:center; padding-top:3rem; flex-direction:column; align-items:center">
+      <p class="closing-question">
+        Is any of this actually true right now, in this moment?
+      </p>
+      <div id="emotion-continue-row" class="btn-row"
+           style="justify-content:center; margin-top:3rem; opacity:0; transition:opacity 300ms ease;">
+        <button class="btn" id="emotion-continue">Continue →</button>
+      </div>
+    </div>
+  `;
+
+  const emotionValues = {};
+
+  function showEmotionPrompt(index) {
+    document.getElementById('emotion-prompts').innerHTML = `
+      <div class="field" style="margin-top:1rem">
+        <label>${escapeHtml(EMOTION_PROMPTS[index])}</label>
+        <textarea id="emotion-input" rows="3" autocomplete="off" style="margin-top:0.5rem"></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="emotion-prompt-next">
+          ${index < EMOTION_PROMPTS.length - 1 ? 'Next →' : 'Done'}
+        </button>
+      </div>
+    `;
+    setTimeout(() => document.getElementById('emotion-input').focus(), 50);
+
+    document.getElementById('emotion-prompt-next').addEventListener('click', () => {
+      emotionValues[EMOTION_KEYS[index]] = document.getElementById('emotion-input').value.trim();
+      if (index < EMOTION_PROMPTS.length - 1) {
+        showEmotionPrompt(index + 1);
+      } else {
+        currentSession.emotionCheck = emotionValues;
+        appState = saveSession(appState, currentSession);
+        saveState(appState);
+        showClosingQuestion();
+      }
+    });
+  }
+
+  function showClosingQuestion() {
+    document.getElementById('emotion-prompts').style.display = 'none';
+    const closing = document.getElementById('emotion-closing');
+    closing.style.display = 'flex';
+    setTimeout(() => {
+      document.getElementById('emotion-continue-row').style.opacity = '1';
+    }, 4000);
+    document.getElementById('emotion-continue').onclick = goToProjects;
+  }
+
+  document.getElementById('emotion-yes').addEventListener('click', () => {
+    document.getElementById('emotion-gate').style.display = 'none';
+    document.getElementById('emotion-prompts').style.display = 'block';
+    showEmotionPrompt(0);
+  });
+
+  document.getElementById('emotion-no').addEventListener('click', goToProjects);
+}
+
+function goToProjects() {
+  renderProjectsScreen();
+  showScreen('screen-projects');
+}
