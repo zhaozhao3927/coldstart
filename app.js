@@ -122,6 +122,7 @@ async function fetchCommits(githubUrl, pat) {
 // ── Router ─────────────────────────────────────────────────────────────────
 let appState = loadState();
 const commitCache = {};
+const navHistory  = [];
 
 const currentSession = {
   direction: { mainFocus: '', tasks: '', smallStep: '' },
@@ -129,13 +130,46 @@ const currentSession = {
   chosenProjectId: null
 };
 
-function showScreen(id) {
+function showScreen(id, skipHistory = false) {
   document.querySelectorAll('.screen').forEach(el => {
     el.classList.remove('active', 'visible');
   });
   const screen = document.getElementById(id);
   screen.classList.add('active');
   requestAnimationFrame(() => screen.classList.add('visible'));
+  if (!skipHistory) navHistory.push(id);
+  updateBackBtn();
+}
+
+function updateBackBtn() {
+  const btn = document.getElementById('back-btn');
+  if (!btn) return;
+  const noBackScreens = ['screen-setup', 'screen-choice'];
+  const current = navHistory[navHistory.length - 1];
+  btn.style.display = (navHistory.length > 1 && !noBackScreens.includes(current)) ? 'block' : 'none';
+}
+
+const SCREEN_RENDERERS = {
+  'screen-choice':    () => renderChoiceScreen(),
+  'screen-arrive':    () => renderArriveScreen(),
+  'screen-breathing': () => renderBreathingScreen(),
+  'screen-grounding': () => renderGroundingScreen(),
+  'screen-direction': () => renderDirectionScreen(),
+  'screen-emotion':   () => renderEmotionCheckScreen(),
+  'screen-projects':  () => renderProjectsScreen(),
+  'screen-begin':     () => {
+    const pid = currentSession.chosenProjectId;
+    if (pid) renderFirstStepScreen(pid, commitCache[pid] || []);
+  }
+};
+
+function goBack() {
+  if (navHistory.length < 2) return;
+  navHistory.pop();
+  const prev = navHistory[navHistory.length - 1];
+  const renderer = SCREEN_RENDERERS[prev];
+  if (renderer) renderer();
+  showScreen(prev, true); // true = don't add to history again
 }
 
 function escapeHtml(str) {
