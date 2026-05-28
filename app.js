@@ -86,3 +86,42 @@ async function fetchCommits(githubUrl, pat) {
     return [];
   }
 }
+
+// ── Router ─────────────────────────────────────────────────────────────────
+let appState = loadState();
+
+const currentSession = {
+  direction: { mainFocus: '', tasks: '', smallStep: '' },
+  emotionCheck: null,
+  chosenProjectId: null
+};
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(el => {
+    el.classList.remove('active', 'visible');
+  });
+  const screen = document.getElementById(id);
+  screen.classList.add('active');
+  requestAnimationFrame(() => screen.classList.add('visible'));
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function init() {
+  document.getElementById('settings-btn').addEventListener('click', openSettings);
+  if (appState.projects.length === 0) {
+    renderSetupScreen();
+    showScreen('screen-setup');
+  } else {
+    renderChoiceScreen();
+    showScreen('screen-choice');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
