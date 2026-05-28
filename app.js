@@ -289,6 +289,11 @@ function submitNewProject() {
 
 // ── Session choice ─────────────────────────────────────────────────────────
 function renderChoiceScreen() {
+  Object.assign(currentSession, {
+    direction: { mainFocus: '', tasks: '', smallStep: '' },
+    emotionCheck: null,
+    chosenProjectId: null
+  });
   document.getElementById('screen-choice').innerHTML = `
     <div class="col" style="text-align:center">
       <p class="ritual-text" style="opacity:1; font-size:1.35rem; margin-bottom:3rem;">
@@ -545,7 +550,9 @@ function renderDirectionScreen() {
   `;
 
   document.getElementById('dir-s1-next').addEventListener('click', () => {
-    currentSession.direction.mainFocus = document.getElementById('dir-focus').value.trim();
+    const focus = document.getElementById('dir-focus').value.trim();
+    if (!focus) { alert('Please enter your main focus for today.'); return; }
+    currentSession.direction.mainFocus = focus;
     document.getElementById('dir-s1').style.display = 'none';
     document.getElementById('dir-s2').style.display = 'block';
     document.getElementById('dir-tasks').focus();
@@ -670,6 +677,11 @@ async function renderProjectsScreen() {
   `;
 
   const container = document.getElementById('project-cards');
+
+  if (appState.projects.length === 0) {
+    container.innerHTML = '<p class="muted" style="text-align:center">No projects yet. Add one in ⚙ Settings.</p>';
+    return;
+  }
 
   for (const project of appState.projects) {
     const card = document.createElement('div');
