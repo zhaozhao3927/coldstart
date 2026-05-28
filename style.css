@@ -1,0 +1,346 @@
+/* ── Design tokens ─────────────────────────────────────────────────────── */
+:root {
+  --bg:           #F7F5F2;
+  --text:         #1A1A1A;
+  --text-muted:   #7A7670;
+  --accent:       #7B9E87;
+  --accent-light: #C5D9CB;
+  --accent-dark:  #4A6B55;
+  --border:       #E0DDD9;
+  --font-serif:   'Lora', Georgia, serif;
+  --font-sans:    'Inter', system-ui, sans-serif;
+}
+
+/* ── Reset ─────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+/* ── Screen layout ─────────────────────────────────────────────────────── */
+.screen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  padding: 0 24px;
+  overflow-y: auto;
+  opacity: 0;
+  transition: opacity 600ms ease;
+}
+
+.screen.active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.screen.visible { opacity: 1; }
+
+.col {
+  width: 100%;
+  max-width: 560px;
+  padding: 64px 0;
+}
+
+/* ── Typography ────────────────────────────────────────────────────────── */
+.ritual-text {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  line-height: 1.95;
+  color: var(--text);
+}
+
+.ritual-text p {
+  margin-bottom: 0.9rem;
+  opacity: 0;
+  transition: opacity 700ms ease;
+}
+
+.ritual-text p.revealed { opacity: 1; }
+
+h1 {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 400;
+  margin-bottom: 1.5rem;
+}
+
+h2 {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 400;
+  margin-bottom: 1rem;
+}
+
+.eyebrow {
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 2.5rem;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-block;
+  padding: 11px 26px;
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--accent-dark);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 280ms ease, color 280ms ease;
+  text-transform: uppercase;
+}
+
+.btn:hover { background: var(--accent); color: #fff; }
+
+.btn-ghost {
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+.btn-ghost:hover { background: var(--border); color: var(--text); }
+
+.btn-sm { padding: 6px 14px; font-size: 0.78rem; }
+
+.btn-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+}
+
+/* ── Inputs ────────────────────────────────────────────────────────────── */
+input[type="text"],
+input[type="url"],
+input[type="password"],
+textarea {
+  width: 100%;
+  padding: 10px 0;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 280ms ease;
+}
+
+input[type="text"]:focus,
+input[type="url"]:focus,
+input[type="password"]:focus,
+textarea:focus { border-bottom-color: var(--accent); }
+
+textarea { resize: none; min-height: 72px; line-height: 1.6; }
+
+label {
+  display: block;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.field { margin-bottom: 2rem; }
+
+.muted { font-size: 0.84rem; color: var(--text-muted); line-height: 1.5; }
+
+/* ── Settings button ───────────────────────────────────────────────────── */
+.settings-btn {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  z-index: 100;
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0.4;
+  transition: opacity 280ms ease;
+  padding: 4px;
+  line-height: 1;
+}
+
+.settings-btn:hover { opacity: 1; }
+
+/* ── Overlay ───────────────────────────────────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 200;
+  overflow-y: auto;
+  padding: 48px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.overlay.hidden { display: none; }
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-bottom: 2rem;
+  align-self: flex-end;
+}
+
+.divider { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+/* ── Settings project list ─────────────────────────────────────────────── */
+.project-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.project-item-info { flex: 1; }
+.project-item-info strong { display: block; margin-bottom: 2px; font-weight: 500; }
+.project-item-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* ── Breathing ─────────────────────────────────────────────────────────── */
+.breath-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  padding: 1.5rem 0;
+}
+
+.breath-instruction {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.85;
+  max-width: 360px;
+  white-space: pre-line;
+}
+
+.breath-circle {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: var(--accent-light);
+  border: 2px solid var(--accent);
+  transition: transform 4s ease-in-out;
+  will-change: transform;
+}
+
+.breath-circle.inhaling { transform: scale(1.7); }
+.breath-circle.exhaling { transform: scale(1); }
+
+.breath-label {
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  min-height: 1.4em;
+  text-align: center;
+}
+
+.breath-counter {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+/* ── Project cards ─────────────────────────────────────────────────────── */
+.project-cards { display: flex; flex-direction: column; gap: 14px; width: 100%; }
+
+.project-card {
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 20px 22px;
+  cursor: pointer;
+  transition: border-color 280ms ease, background 280ms ease;
+}
+
+.project-card:hover { border-color: var(--accent); background: #f0f5f1; }
+
+.project-card h3 {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 400;
+  margin-bottom: 4px;
+}
+
+.project-card .desc { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px; }
+
+.commits-list {
+  list-style: none;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.commits-list li {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding: 2px 0;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.commit-date { flex-shrink: 0; color: var(--accent-dark); font-size: 0.76rem; }
+.commits-loading { font-style: italic; }
+
+/* ── Begin screen ──────────────────────────────────────────────────────── */
+.begin-project {
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.begin-step {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.65;
+  color: var(--text);
+  margin-bottom: 3rem;
+}
+
+/* ── Emotion check ─────────────────────────────────────────────────────── */
+.closing-question {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-style: italic;
+  line-height: 1.8;
+  color: var(--text);
+  text-align: center;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+/* ── Accessibility ─────────────────────────────────────────────────────── */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
