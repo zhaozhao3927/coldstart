@@ -286,3 +286,79 @@ function submitNewProject() {
   saveState(appState);
   renderSettingsOverlay();
 }
+
+// ── Session choice ─────────────────────────────────────────────────────────
+function renderChoiceScreen() {
+  document.getElementById('screen-choice').innerHTML = `
+    <div class="col" style="text-align:center">
+      <p class="ritual-text" style="opacity:1; font-size:1.35rem; margin-bottom:3rem;">
+        Welcome back.
+      </p>
+      <p class="eyebrow" style="margin-bottom:2rem;">Would you like to begin with the ritual?</p>
+      <div class="btn-row" style="justify-content:center">
+        <button class="btn" id="choice-ritual">Yes, guide me</button>
+        <button class="btn btn-ghost" id="choice-skip">Skip to today's focus</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('choice-ritual').addEventListener('click', () => {
+    renderArriveScreen();
+    showScreen('screen-arrive');
+  });
+
+  document.getElementById('choice-skip').addEventListener('click', () => {
+    renderDirectionScreen();
+    showScreen('screen-direction');
+  });
+}
+
+// ── Step 1: Arrive ─────────────────────────────────────────────────────────
+const ARRIVE_LINES = [
+  'Sit down.',
+  'Place both feet on the ground.',
+  'Let your shoulders soften.',
+  'You do not need to feel motivated right now.',
+  'You do not need to feel ready.',
+  'You only need to arrive.',
+  'Today is not about doing everything.',
+  'It is only about beginning.',
+  'Take one slow breath in.',
+  'And one slow breath out.'
+];
+
+function renderArriveScreen() {
+  const screen = document.getElementById('screen-arrive');
+  screen.innerHTML = `
+    <div class="col">
+      <div id="arrive-text" class="ritual-text"></div>
+      <div id="arrive-btn" style="opacity:0; transition:opacity 600ms ease; margin-top:2.5rem">
+        <button class="btn" id="arrive-continue">Continue →</button>
+      </div>
+    </div>
+  `;
+
+  const container = document.getElementById('arrive-text');
+  ARRIVE_LINES.forEach(line => {
+    const p = document.createElement('p');
+    p.textContent = line;
+    container.appendChild(p);
+  });
+
+  let i = 0;
+  (function revealNext() {
+    const ps = container.querySelectorAll('p');
+    if (i < ps.length) {
+      ps[i].classList.add('revealed');
+      i++;
+      setTimeout(revealNext, 900);
+    } else {
+      document.getElementById('arrive-btn').style.opacity = '1';
+    }
+  })();
+
+  document.getElementById('arrive-continue').addEventListener('click', () => {
+    renderBreathingScreen();
+    showScreen('screen-breathing');
+  });
+}
