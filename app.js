@@ -185,3 +185,103 @@ function renderSetupScreen() {
     showScreen('screen-choice');
   });
 }
+
+// ── Settings ───────────────────────────────────────────────────────────────
+function openSettings() {
+  renderSettingsOverlay();
+  document.getElementById('settings-overlay').classList.remove('hidden');
+}
+
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.add('hidden');
+}
+
+function renderSettingsOverlay() {
+  const projectsHtml = appState.projects.length === 0
+    ? '<p class="muted">No projects yet.</p>'
+    : appState.projects.map(p => `
+        <div class="project-item">
+          <div class="project-item-info">
+            <strong>${escapeHtml(p.name)}</strong>
+            <div class="muted">${escapeHtml(p.githubUrl)}</div>
+          </div>
+          <div class="project-item-actions">
+            <button class="btn btn-ghost btn-sm" onclick="confirmDeleteProject('${escapeHtml(p.id)}')">Delete</button>
+          </div>
+        </div>
+      `).join('');
+
+  document.getElementById('settings-overlay').innerHTML = `
+    <div class="col">
+      <button class="close-btn" onclick="closeSettings()">✕</button>
+      <h1>Settings</h1>
+
+      <h2>Projects</h2>
+      ${projectsHtml}
+      <div style="margin-top:1.5rem">
+        <button class="btn" onclick="toggleAddProjectForm()">+ Add project</button>
+      </div>
+
+      <div id="add-project-form" style="display:none; margin-top:2rem">
+        <hr class="divider">
+        <h2>New project</h2>
+        <div class="field">
+          <label for="new-name">Name</label>
+          <input id="new-name" type="text" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="new-desc">Description</label>
+          <textarea id="new-desc" rows="2"></textarea>
+        </div>
+        <div class="field">
+          <label for="new-url">GitHub URL</label>
+          <input id="new-url" type="url">
+        </div>
+        <div class="btn-row">
+          <button class="btn" onclick="submitNewProject()">Add</button>
+          <button class="btn btn-ghost" onclick="toggleAddProjectForm()">Cancel</button>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <h2>GitHub Access Token</h2>
+      <div class="field">
+        <label for="settings-pat">Personal Access Token</label>
+        <input id="settings-pat" type="password" value="${escapeHtml(appState.githubPAT)}" placeholder="ghp_...">
+        <p class="muted" style="margin-top:6px;">Stored only in this browser. Only sent to GitHub's API.</p>
+      </div>
+      <button class="btn" onclick="savePAT()">Save token</button>
+    </div>
+  `;
+}
+
+function confirmDeleteProject(id) {
+  if (!confirm('Delete this project?')) return;
+  appState = deleteProject(appState, id);
+  saveState(appState);
+  renderSettingsOverlay();
+}
+
+function savePAT() {
+  const pat = document.getElementById('settings-pat').value.trim();
+  appState = { ...appState, githubPAT: pat };
+  saveState(appState);
+  alert('Token saved.');
+}
+
+function toggleAddProjectForm() {
+  const form = document.getElementById('add-project-form');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function submitNewProject() {
+  const name        = document.getElementById('new-name').value.trim();
+  const description = document.getElementById('new-desc').value.trim();
+  const githubUrl   = document.getElementById('new-url').value.trim();
+  if (!name || !githubUrl) { alert('Name and GitHub URL are required.'); return; }
+  if (!parseGitHubUrl(githubUrl)) { alert('Please use a valid GitHub URL.'); return; }
+  appState = addProject(appState, { name, description, githubUrl });
+  saveState(appState);
+  renderSettingsOverlay();
+}
