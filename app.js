@@ -826,12 +826,39 @@ function renderDirectionScreen() {
 }
 
 // ── Step 4b: Emotion Check ─────────────────────────────────────────────────
+
+// Forward: surface → middle → core
 const EMOTION_PROMPTS = [
-  "What's the reason you want to postpone?",
+  "What's making you want to put this off right now?",
   "And if that's true... what are you afraid might happen?",
-  "And if that happened... what would it really mean about you?"
+  "And if that happened... what would it mean about you?"
 ];
 const EMOTION_KEYS = ['reason', 'fear', 'meaning'];
+
+// Backwards: core → middle → surface (cognitive restructuring)
+const REFRAME_STEPS = [
+  {
+    key:      'meaning_reflection',
+    getLabel: v => `You wrote, about what this would mean about you`,
+    getQuote: v => v.meaning,
+    question: 'Is this actually true about you — or is it a story your mind is telling you right now?',
+    sub:      'What evidence do you have for this belief — and what speaks against it?'
+  },
+  {
+    key:      'fear_reflection',
+    getLabel: v => `You wrote, about what you fear might happen`,
+    getQuote: v => v.fear,
+    question: 'How certain is it that this would actually happen?',
+    sub:      'And if it did — have you faced difficult moments before and found your way through?'
+  },
+  {
+    key:      'reason_reflection',
+    getLabel: v => `You wrote, about why you want to postpone`,
+    getQuote: v => v.reason,
+    question: 'Seeing what lies beneath this — does this still feel like a barrier?',
+    sub:      'Or might it be a signal that this work genuinely matters to you?'
+  }
+];
 
 function renderEmotionCheckScreen() {
   document.getElementById('screen-emotion').innerHTML = `
@@ -845,12 +872,15 @@ function renderEmotionCheckScreen() {
       </div>
     </div>
 
-    <div id="emotion-prompts" class="col" style="display:none"></div>
+    <div id="emotion-prompts"  class="col" style="display:none"></div>
+    <div id="emotion-review"   class="col" style="display:none"></div>
+    <div id="emotion-reframe"  class="col" style="display:none"></div>
 
     <div id="emotion-closing" class="col"
-         style="display:none; text-align:center; padding-top:3rem; flex-direction:column; align-items:center">
-      <p class="closing-question">
-        Is any of this actually true right now, in this moment?
+         style="display:none; text-align:center; flex-direction:column; align-items:center; padding-top:2rem">
+      <p class="closing-question">You don't need to resolve all of this right now.</p>
+      <p style="font-family:var(--font-serif); font-size:1rem; color:var(--text-muted); margin-top:0.75rem; font-style:italic">
+        You only need to begin.
       </p>
       <div id="emotion-continue-row" class="btn-row"
            style="justify-content:center; margin-top:3rem; opacity:0; transition:opacity 300ms ease;">
@@ -859,17 +889,21 @@ function renderEmotionCheckScreen() {
     </div>
   `;
 
-  const emotionValues = {};
+  const emotionValues   = {};
+  const reframeValues   = {};
 
+  // ── Stage 1: Forward prompts ──────────────────────────────────────────────
   function showEmotionPrompt(index) {
     document.getElementById('emotion-prompts').innerHTML = `
       <div class="field" style="margin-top:1rem">
-        <label>${escapeHtml(EMOTION_PROMPTS[index])}</label>
-        <textarea id="emotion-input" rows="3" autocomplete="off" style="margin-top:0.5rem"></textarea>
+        <label style="font-family:var(--font-serif); font-size:1rem; text-transform:none; letter-spacing:0; color:var(--text); line-height:1.7">
+          ${escapeHtml(EMOTION_PROMPTS[index])}
+        </label>
+        <textarea id="emotion-input" rows="3" autocomplete="off" style="margin-top:1rem"></textarea>
       </div>
       <div class="btn-row">
         <button class="btn" id="emotion-prompt-next">
-          ${index < EMOTION_PROMPTS.length - 1 ? 'Next →' : 'Done'}
+          ${index < EMOTION_PROMPTS.length - 1 ? 'Next →' : 'Continue →'}
         </button>
       </div>
     `;
@@ -880,21 +914,90 @@ function renderEmotionCheckScreen() {
       if (index < EMOTION_PROMPTS.length - 1) {
         showEmotionPrompt(index + 1);
       } else {
-        currentSession.emotionCheck = emotionValues;
-        appState = saveSession(appState, currentSession);
-        saveState(appState);
-        showClosingQuestion();
+        document.getElementById('emotion-prompts').style.display = 'none';
+        showReview();
       }
     });
   }
 
-  function showClosingQuestion() {
-    document.getElementById('emotion-prompts').style.display = 'none';
+  // ── Stage 2: Review — show all three answers together ────────────────────
+  function showReview() {
+    const review = document.getElementById('emotion-review');
+    review.style.display = 'block';
+    review.innerHTML = `
+      <p class="eyebrow" style="margin-bottom:2rem">What you've written</p>
+
+      <div class="reflection-block">
+        <p class="reflection-label">What's making you postpone</p>
+        <p class="reflection-answer">${escapeHtml(emotionValues.reason || '—')}</p>
+      </div>
+      <div class="reflection-block">
+        <p class="reflection-label">What you fear might happen</p>
+        <p class="reflection-answer">${escapeHtml(emotionValues.fear || '—')}</p>
+      </div>
+      <div class="reflection-block">
+        <p class="reflection-label">What you believe this means about you</p>
+        <p class="reflection-answer">${escapeHtml(emotionValues.meaning || '—')}</p>
+      </div>
+
+      <p class="muted" style="margin-top:2rem; font-style:italic">
+        Let's look at each of these, starting from the deepest.
+      </p>
+      <div class="btn-row" style="margin-top:1.5rem">
+        <button class="btn" id="review-next">Look closer →</button>
+      </div>
+    `;
+    document.getElementById('review-next').addEventListener('click', () => {
+      review.style.display = 'none';
+      showReframe(0);
+    });
+  }
+
+  // ── Stage 3: Backwards cognitive restructuring ───────────────────────────
+  function showReframe(index) {
+    const reframe = document.getElementById('emotion-reframe');
+    const step    = REFRAME_STEPS[index];
+    reframe.style.display = 'block';
+    reframe.innerHTML = `
+      <p class="eyebrow" style="margin-bottom:1.25rem">${escapeHtml(step.getLabel(emotionValues))}</p>
+      <blockquote class="reflection-quote">${escapeHtml(step.getQuote(emotionValues) || '—')}</blockquote>
+      <p class="ritual-text" style="opacity:1; margin:2rem 0 0.5rem; font-size:1.05rem">
+        ${escapeHtml(step.question)}
+      </p>
+      <p class="muted" style="margin-bottom:1.5rem">${escapeHtml(step.sub)}</p>
+      <div class="field">
+        <textarea id="reframe-input" rows="3" autocomplete="off"
+                  placeholder="Write whatever comes to mind…"></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="reframe-next">
+          ${index < REFRAME_STEPS.length - 1 ? 'Next →' : 'Continue →'}
+        </button>
+      </div>
+    `;
+    setTimeout(() => document.getElementById('reframe-input').focus(), 50);
+
+    document.getElementById('reframe-next').addEventListener('click', () => {
+      reframeValues[step.key] = document.getElementById('reframe-input').value.trim();
+      reframe.style.display = 'none';
+      if (index < REFRAME_STEPS.length - 1) {
+        showReframe(index + 1);
+      } else {
+        currentSession.emotionCheck = { ...emotionValues, reframe: reframeValues };
+        appState = saveSession(appState, currentSession);
+        saveState(appState);
+        showClosing();
+      }
+    });
+  }
+
+  // ── Stage 4: Closing ──────────────────────────────────────────────────────
+  function showClosing() {
     const closing = document.getElementById('emotion-closing');
     closing.style.display = 'flex';
     setTimeout(() => {
       document.getElementById('emotion-continue-row').style.opacity = '1';
-    }, 4000);
+    }, 2000);
     document.getElementById('emotion-continue').onclick = goToProjects;
   }
 
