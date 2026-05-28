@@ -204,13 +204,33 @@ function renderSettingsOverlay() {
   const projectsHtml = appState.projects.length === 0
     ? '<p class="muted">No projects yet.</p>'
     : appState.projects.map(p => `
-        <div class="project-item">
+        <div class="project-item" id="project-item-${p.id}">
           <div class="project-item-info">
             <strong>${escapeHtml(p.name)}</strong>
-            <div class="muted">${p.githubUrl ? escapeHtml(p.githubUrl) : 'No repository URL'}</div>
+            ${p.description ? `<div class="muted" style="margin-top:3px">${escapeHtml(p.description)}</div>` : ''}
+            <div class="muted" style="margin-top:3px; font-size:0.78rem">${p.githubUrl ? escapeHtml(p.githubUrl) : 'No repository URL'}</div>
           </div>
           <div class="project-item-actions">
-            <button class="btn btn-ghost btn-sm" onclick="confirmDeleteProject('${escapeHtml(p.id)}')">Delete</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleEditProject('${p.id}')">Edit</button>
+            <button class="btn btn-ghost btn-sm" onclick="confirmDeleteProject('${p.id}')">Delete</button>
+          </div>
+        </div>
+        <div id="project-edit-${p.id}" style="display:none; padding:1rem 0 1.5rem; border-bottom:1px solid var(--border)">
+          <div class="field">
+            <label>Name</label>
+            <input type="text" id="edit-name-${p.id}" value="${escapeHtml(p.name)}" autocomplete="off">
+          </div>
+          <div class="field">
+            <label>Description</label>
+            <textarea id="edit-desc-${p.id}" rows="2">${escapeHtml(p.description || '')}</textarea>
+          </div>
+          <div class="field">
+            <label>GitHub URL <span class="muted" style="text-transform:none; letter-spacing:0">— recommended</span></label>
+            <input type="url" id="edit-url-${p.id}" value="${escapeHtml(p.githubUrl || '')}" placeholder="https://github.com/you/repo">
+          </div>
+          <div class="btn-row" style="margin-top:1rem">
+            <button class="btn" onclick="saveEditProject('${p.id}')">Save</button>
+            <button class="btn btn-ghost" onclick="toggleEditProject('${p.id}')">Cancel</button>
           </div>
         </div>
       `).join('');
@@ -261,6 +281,27 @@ function renderSettingsOverlay() {
       <button class="btn" onclick="savePAT()">Save token</button>
     </div>
   `;
+}
+
+function toggleEditProject(id) {
+  const editDiv = document.getElementById(`project-edit-${id}`);
+  const itemDiv = document.getElementById(`project-item-${id}`);
+  if (!editDiv) return;
+  const isOpen = editDiv.style.display !== 'none';
+  editDiv.style.display = isOpen ? 'none' : 'block';
+  if (itemDiv) itemDiv.style.opacity = isOpen ? '1' : '0.4';
+  if (!isOpen) document.getElementById(`edit-name-${id}`).focus();
+}
+
+function saveEditProject(id) {
+  const name        = document.getElementById(`edit-name-${id}`).value.trim();
+  const description = document.getElementById(`edit-desc-${id}`).value.trim();
+  const githubUrl   = document.getElementById(`edit-url-${id}`).value.trim();
+  if (!name) { alert('Name is required.'); return; }
+  if (githubUrl && !parseGitHubUrl(githubUrl)) { alert('Please use a valid GitHub URL.'); return; }
+  appState = updateProject(appState, id, { name, description, githubUrl });
+  saveState(appState);
+  renderSettingsOverlay();
 }
 
 function confirmDeleteProject(id) {
