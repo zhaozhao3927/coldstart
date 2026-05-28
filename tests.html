@@ -37,7 +37,49 @@
       if (a !== b) throw new Error(`Expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`);
     }
 
-    // ── tests added in Tasks 3 and 4 ──
+    // ── Storage tests ──────────────────────────────────────────────────────
+    test('defaultState returns correct shape', () => {
+      const s = defaultState();
+      assert(Array.isArray(s.projects), 'projects is array');
+      assert(Array.isArray(s.sessions), 'sessions is array');
+      assertEqual(s.githubPAT, '');
+    });
+
+    test('addProject adds a project with a uuid id', () => {
+      const s = addProject(defaultState(), {
+        name: 'Test', description: 'Desc', githubUrl: 'https://github.com/a/b'
+      });
+      assertEqual(s.projects.length, 1);
+      assert(s.projects[0].id.length > 10, 'id is a uuid');
+      assertEqual(s.projects[0].name, 'Test');
+    });
+
+    test('deleteProject removes the correct project', () => {
+      let s = defaultState();
+      s = addProject(s, { name: 'A', description: '', githubUrl: '' });
+      s = addProject(s, { name: 'B', description: '', githubUrl: '' });
+      const idA = s.projects[0].id;
+      s = deleteProject(s, idA);
+      assertEqual(s.projects.length, 1);
+      assertEqual(s.projects[0].name, 'B');
+    });
+
+    test('updateProject changes only specified fields', () => {
+      let s = addProject(defaultState(), { name: 'Old', description: 'D', githubUrl: 'u' });
+      s = updateProject(s, s.projects[0].id, { name: 'New' });
+      assertEqual(s.projects[0].name, 'New');
+      assertEqual(s.projects[0].description, 'D');
+    });
+
+    test('saveSession stores session for today', () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const s = saveSession(defaultState(), { direction: { mainFocus: 'X', tasks: '', smallStep: '' } });
+      assertEqual(s.sessions.length, 1);
+      assertEqual(s.sessions[0].date, today);
+      assertEqual(s.sessions[0].direction.mainFocus, 'X');
+    });
+
+    // ── GitHub tests added in Task 4 ──
 
     results.innerHTML += `<hr><p><strong>${passed} passed, ${failed} failed</strong></p>`;
   </script>
