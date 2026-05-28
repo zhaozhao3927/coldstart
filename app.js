@@ -601,7 +601,7 @@ const BREATHING_ROUNDS = [
   },
   {
     name: 'Full Yogic Breathing',
-    instruction: 'Breathe from the belly upward into the chest.\nA smooth wave of breath.\nBelly — Ribs — Chest.\nAnd slowly release.'
+    instruction: 'Inhale — a slow wave upward:\nAbdomen · Chest · Collarbone\n\nExhale — release downward:\nCollarbone · Chest · Abdomen'
   }
 ];
 
