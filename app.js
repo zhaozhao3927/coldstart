@@ -393,6 +393,12 @@ function renderBreathingScreen() {
         <div class="breath-label" id="breath-label"></div>
         <div class="breath-counter" id="breath-counter"></div>
       </div>
+      <div class="breath-speed-wrap">
+        <label class="breath-speed-label" for="breath-speed">
+          Breath pace — <span id="breath-speed-val">4</span>s per phase
+        </label>
+        <input id="breath-speed" type="range" min="2" max="8" value="4" step="1" class="breath-speed-slider">
+      </div>
       <div id="breathing-next-row" class="btn-row" style="display:none">
         <button class="btn" id="breathing-next">Next round →</button>
       </div>
@@ -402,7 +408,16 @@ function renderBreathingScreen() {
     </div>
   `;
 
+  document.getElementById('breath-speed').addEventListener('input', e => {
+    document.getElementById('breath-speed-val').textContent = e.target.value;
+  });
+
   runBreathingRound(0);
+}
+
+function getBreathDuration() {
+  const slider = document.getElementById('breath-speed');
+  return slider ? parseInt(slider.value, 10) * 1000 : 4000;
 }
 
 function runBreathingRound(roundIndex) {
@@ -437,6 +452,7 @@ function runBreathingRound(roundIndex) {
       return;
     }
 
+    const duration = getBreathDuration();
     count++;
     const circle  = document.getElementById('breath-circle');
     const label   = document.getElementById('breath-label');
@@ -444,6 +460,7 @@ function runBreathingRound(roundIndex) {
 
     if (!circle || !label || !counter) return;
 
+    circle.style.transition = `transform ${duration / 1000}s ease-in-out`;
     counter.textContent = `${round.name} · breath ${count} of ${TOTAL}`;
     label.textContent   = 'Inhale';
     circle.classList.remove('exhaling');
@@ -453,11 +470,13 @@ function runBreathingRound(roundIndex) {
       const c = document.getElementById('breath-circle');
       const l = document.getElementById('breath-label');
       if (!c || !l) return;
+      const d = getBreathDuration();
+      c.style.transition = `transform ${d / 1000}s ease-in-out`;
       l.textContent = 'Exhale';
       c.classList.remove('inhaling');
       c.classList.add('exhaling');
-      setTimeout(nextBreath, 4000);
-    }, 4000);
+      setTimeout(nextBreath, d);
+    }, duration);
   })();
 }
 
