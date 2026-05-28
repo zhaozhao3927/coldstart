@@ -831,6 +831,7 @@ function renderDirectionScreen() {
           <textarea id="dir-tasks" rows="3"></textarea>
         </div>
         <div class="btn-row">
+          <button class="btn btn-ghost" id="dir-s2-back">← Back</button>
           <button class="btn" id="dir-s2-next">Continue →</button>
         </div>
       </div>
@@ -844,6 +845,12 @@ function renderDirectionScreen() {
     document.getElementById('dir-s1').style.display = 'none';
     document.getElementById('dir-s2').style.display = 'block';
     document.getElementById('dir-tasks').focus();
+  });
+
+  document.getElementById('dir-s2-back').addEventListener('click', () => {
+    document.getElementById('dir-s2').style.display = 'none';
+    document.getElementById('dir-s1').style.display = 'block';
+    document.getElementById('dir-focus').focus();
   });
 
   document.getElementById('dir-s2-next').addEventListener('click', () => {
@@ -931,15 +938,23 @@ function renderEmotionCheckScreen() {
         <label style="font-family:var(--font-serif); font-size:1rem; text-transform:none; letter-spacing:0; color:var(--text); line-height:1.7">
           ${escapeHtml(EMOTION_PROMPTS[index])}
         </label>
-        <textarea id="emotion-input" rows="3" autocomplete="off" style="margin-top:1rem"></textarea>
+        <textarea id="emotion-input" rows="3" autocomplete="off" style="margin-top:1rem">${escapeHtml(emotionValues[EMOTION_KEYS[index]] || '')}</textarea>
       </div>
       <div class="btn-row">
+        ${index > 0 ? `<button class="btn btn-ghost" id="emotion-prompt-back">← Back</button>` : ''}
         <button class="btn" id="emotion-prompt-next">
           ${index < EMOTION_PROMPTS.length - 1 ? 'Next →' : 'Continue →'}
         </button>
       </div>
     `;
     setTimeout(() => document.getElementById('emotion-input').focus(), 50);
+
+    if (index > 0) {
+      document.getElementById('emotion-prompt-back').addEventListener('click', () => {
+        emotionValues[EMOTION_KEYS[index]] = document.getElementById('emotion-input').value.trim();
+        showEmotionPrompt(index - 1);
+      });
+    }
 
     document.getElementById('emotion-prompt-next').addEventListener('click', () => {
       emotionValues[EMOTION_KEYS[index]] = document.getElementById('emotion-input').value.trim();
@@ -1010,12 +1025,29 @@ function renderEmotionCheckScreen() {
                   placeholder="Write whatever comes to mind…"></textarea>
       </div>
       <div class="btn-row">
+        <button class="btn btn-ghost" id="reframe-back">← Back</button>
         <button class="btn" id="reframe-next">
           ${index < REFRAME_STEPS.length - 1 ? 'Next →' : 'Continue →'}
         </button>
       </div>
     `;
-    setTimeout(() => document.getElementById('reframe-input').focus(), 50);
+    setTimeout(() => {
+      const inp = document.getElementById('reframe-input');
+      if (inp) {
+        inp.value = reframeValues[step.key] || '';
+        inp.focus();
+      }
+    }, 50);
+
+    document.getElementById('reframe-back').addEventListener('click', () => {
+      reframeValues[step.key] = document.getElementById('reframe-input').value.trim();
+      reframe.style.display = 'none';
+      if (index === 0) {
+        document.getElementById('emotion-review').style.display = 'block';
+      } else {
+        showReframe(index - 1);
+      }
+    });
 
     document.getElementById('reframe-next').addEventListener('click', () => {
       reframeValues[step.key] = document.getElementById('reframe-input').value.trim();
