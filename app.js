@@ -362,3 +362,91 @@ function renderArriveScreen() {
     showScreen('screen-breathing');
   });
 }
+
+// ── Step 2: Breathing ──────────────────────────────────────────────────────
+const BREATHING_ROUNDS = [
+  {
+    name: 'Belly Breathing',
+    instruction: 'Place one hand on your abdomen.\nBreathe deeply into your belly.\nFeel your abdomen expand as you inhale\nand soften as you exhale.'
+  },
+  {
+    name: 'Chest Breathing',
+    instruction: 'Bring your attention to your chest.\nFeel the ribs expand gently.\nLet the chest rise with each inhale\nand fall with each exhale.'
+  },
+  {
+    name: 'Full Yogic Breathing',
+    instruction: 'Breathe from the belly upward into the chest.\nA smooth wave of breath.\nBelly — Ribs — Chest.\nAnd slowly release.'
+  }
+];
+
+function renderBreathingScreen() {
+  document.getElementById('screen-breathing').innerHTML = `
+    <div class="col">
+      <div class="breath-wrap">
+        <div class="breath-instruction" id="breath-instruction"></div>
+        <div class="breath-circle exhaling" id="breath-circle"></div>
+        <div class="breath-label" id="breath-label"></div>
+        <div class="breath-counter" id="breath-counter"></div>
+      </div>
+      <div id="breathing-next-row" class="btn-row" style="display:none">
+        <button class="btn" id="breathing-next">Next round →</button>
+      </div>
+      <div id="breathing-done-row" class="btn-row" style="display:none">
+        <button class="btn" id="breathing-done">Continue →</button>
+      </div>
+    </div>
+  `;
+
+  runBreathingRound(0);
+}
+
+function runBreathingRound(roundIndex) {
+  const round = BREATHING_ROUNDS[roundIndex];
+  const TOTAL = 5;
+
+  document.getElementById('breath-instruction').innerText = round.instruction;
+  document.getElementById('breathing-next-row').style.display = 'none';
+  document.getElementById('breathing-done-row').style.display = 'none';
+
+  let count = 0;
+
+  (function nextBreath() {
+    if (count >= TOTAL) {
+      document.getElementById('breath-counter').textContent = `${round.name} — complete`;
+      document.getElementById('breath-label').textContent = '';
+
+      if (roundIndex < BREATHING_ROUNDS.length - 1) {
+        const row = document.getElementById('breathing-next-row');
+        row.style.display = 'flex';
+        document.getElementById('breathing-next').onclick = () => {
+          row.style.display = 'none';
+          runBreathingRound(roundIndex + 1);
+        };
+      } else {
+        document.getElementById('breathing-done-row').style.display = 'flex';
+        document.getElementById('breathing-done').addEventListener('click', () => {
+          renderGroundingScreen();
+          showScreen('screen-grounding');
+        });
+      }
+      return;
+    }
+
+    count++;
+    const circle  = document.getElementById('breath-circle');
+    const label   = document.getElementById('breath-label');
+    const counter = document.getElementById('breath-counter');
+
+    counter.textContent = `${round.name} · breath ${count} of ${TOTAL}`;
+    label.textContent   = 'Inhale';
+    circle.classList.remove('exhaling');
+    circle.classList.add('inhaling');
+
+    setTimeout(() => {
+      label.textContent = 'Exhale';
+      circle.classList.remove('inhaling');
+      circle.classList.add('exhaling');
+      setTimeout(nextBreath, 4000);
+    }, 4000);
+  })();
+}
