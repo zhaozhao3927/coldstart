@@ -706,3 +706,22 @@ function selectProject(projectId) {
   renderBeginScreen(projectId);
   showScreen('screen-begin');
 }
+
+// ── Step 6: Begin ──────────────────────────────────────────────────────────
+function renderBeginScreen(projectId) {
+  const project   = appState.projects.find(p => p.id === projectId);
+  const smallStep = currentSession.direction.smallStep || 'Begin.';
+
+  document.getElementById('screen-begin').innerHTML = `
+    <div class="col">
+      <p class="begin-project">${escapeHtml(project.name)}</p>
+      <p class="begin-step">${escapeHtml(smallStep)}</p>
+      <div class="btn-row">
+        <a class="btn"
+           href="${escapeHtml(project.githubUrl)}"
+           target="_blank"
+           rel="noopener noreferrer">Open repository →</a>
+      </div>
+    </div>
+  `;
+}
