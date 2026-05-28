@@ -43,3 +43,45 @@ function saveSession(state, session) {
     : [...state.sessions, entry];
   return { ...state, sessions };
 }
+
+// ── GitHub ─────────────────────────────────────────────────────────────────
+function parseGitHubUrl(url) {
+  try {
+    const m = url.match(/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\/?$/);
+    return m ? { owner: m[1], repo: m[2] } : null;
+  } catch {
+    return null;
+  }
+}
+
+function formatRelativeDate(isoString) {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const mins  = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days  = Math.floor(diff / 86400000);
+  if (mins  < 60) return `${mins}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days  === 1) return 'yesterday';
+  return `${days}d ago`;
+}
+
+async function fetchCommits(githubUrl, pat) {
+  const parsed = parseGitHubUrl(githubUrl);
+  if (!parsed) return [];
+  const headers = pat ? { Authorization: `token ${pat}` } : {};
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/commits?per_page=3`,
+      { headers }
+    );
+    if (!res.ok) return [];
+    const commits = await res.json();
+    return commits.map(c => ({
+      message: c.commit.message.split('\n')[0],
+      author:  c.commit.author.name,
+      date:    formatRelativeDate(c.commit.author.date)
+    }));
+  } catch {
+    return [];
+  }
+}

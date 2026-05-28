@@ -79,7 +79,36 @@
       assertEqual(s.sessions[0].direction.mainFocus, 'X');
     });
 
-    // ── GitHub tests added in Task 4 ──
+    // ── GitHub tests ───────────────────────────────────────────────────────
+    test('parseGitHubUrl extracts owner and repo', () => {
+      const r = parseGitHubUrl('https://github.com/alice/my-repo');
+      assertEqual(r.owner, 'alice');
+      assertEqual(r.repo, 'my-repo');
+    });
+
+    test('parseGitHubUrl handles trailing slash', () => {
+      const r = parseGitHubUrl('https://github.com/alice/my-repo/');
+      assertEqual(r.repo, 'my-repo');
+    });
+
+    test('parseGitHubUrl handles .git suffix', () => {
+      const r = parseGitHubUrl('https://github.com/alice/my-repo.git');
+      assertEqual(r.repo, 'my-repo');
+    });
+
+    test('parseGitHubUrl returns null for non-GitHub URL', () => {
+      assertEqual(parseGitHubUrl('https://example.com/foo/bar'), null);
+    });
+
+    test('formatRelativeDate returns minutes for recent timestamp', () => {
+      const recent = new Date(Date.now() - 5 * 60000).toISOString();
+      assertEqual(formatRelativeDate(recent), '5m ago');
+    });
+
+    test('formatRelativeDate returns days for old timestamp', () => {
+      const old = new Date(Date.now() - 3 * 86400000).toISOString();
+      assertEqual(formatRelativeDate(old), '3d ago');
+    });
 
     results.innerHTML += `<hr><p><strong>${passed} passed, ${failed} failed</strong></p>`;
   </script>
