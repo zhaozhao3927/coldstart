@@ -450,3 +450,53 @@ function runBreathingRound(roundIndex) {
     }, 4000);
   })();
 }
+
+// ── Step 3: Grounding ──────────────────────────────────────────────────────
+const GROUNDING_PROMPTS = [
+  'What can you hear right now?',
+  'What can you smell?',
+  'What can you see?'
+];
+
+function renderGroundingScreen() {
+  document.getElementById('screen-grounding').innerHTML = `
+    <div class="col" style="text-align:center">
+      <p class="eyebrow">Bring your attention to this moment</p>
+      <p class="ritual-text" id="grounding-prompt"
+         style="opacity:0; transition:opacity 700ms ease; font-size:1.25rem; text-align:center;"></p>
+      <div id="grounding-btn-row" class="btn-row"
+           style="justify-content:center; margin-top:3rem; opacity:0; transition:opacity 300ms ease;">
+        <button class="btn btn-ghost" id="grounding-next">Next</button>
+      </div>
+    </div>
+  `;
+
+  let idx = 0;
+
+  function showPrompt(i) {
+    const promptEl = document.getElementById('grounding-prompt');
+    const btnRow   = document.getElementById('grounding-btn-row');
+    const nextBtn  = document.getElementById('grounding-next');
+
+    promptEl.style.opacity = '0';
+    btnRow.style.opacity   = '0';
+
+    setTimeout(() => { promptEl.textContent = GROUNDING_PROMPTS[i]; promptEl.style.opacity = '1'; }, 300);
+
+    setTimeout(() => {
+      btnRow.style.opacity = '1';
+      const isLast = i === GROUNDING_PROMPTS.length - 1;
+      nextBtn.textContent = isLast ? 'Continue →' : 'Next';
+      nextBtn.onclick = () => {
+        if (isLast) {
+          renderDirectionScreen();
+          showScreen('screen-direction');
+        } else {
+          showPrompt(++idx);
+        }
+      };
+    }, 5000);
+  }
+
+  showPrompt(0);
+}
