@@ -505,3 +505,70 @@ function renderGroundingScreen() {
 
   showPrompt(0);
 }
+
+// ── Step 4: Today's Direction ──────────────────────────────────────────────
+function renderDirectionScreen() {
+  document.getElementById('screen-direction').innerHTML = `
+    <div class="col">
+      <p class="eyebrow">Today's direction</p>
+
+      <div id="dir-s1">
+        <div class="field">
+          <label for="dir-focus">What is your main focus today?</label>
+          <input id="dir-focus" type="text" autocomplete="off">
+        </div>
+        <div class="btn-row">
+          <button class="btn" id="dir-s1-next">Next →</button>
+        </div>
+      </div>
+
+      <div id="dir-s2" style="display:none">
+        <div class="field">
+          <label for="dir-tasks">What are one or two important tasks?</label>
+          <textarea id="dir-tasks" rows="3"></textarea>
+        </div>
+        <div class="btn-row">
+          <button class="btn" id="dir-s2-next">Next →</button>
+        </div>
+      </div>
+
+      <div id="dir-s3" style="display:none">
+        <div class="field">
+          <label for="dir-step">What is one small, achievable first step?</label>
+          <input id="dir-step" type="text" autocomplete="off">
+        </div>
+        <div class="btn-row">
+          <button class="btn" id="dir-s3-next">Continue →</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('dir-s1-next').addEventListener('click', () => {
+    currentSession.direction.mainFocus = document.getElementById('dir-focus').value.trim();
+    document.getElementById('dir-s1').style.display = 'none';
+    document.getElementById('dir-s2').style.display = 'block';
+    document.getElementById('dir-tasks').focus();
+  });
+
+  document.getElementById('dir-s2-next').addEventListener('click', () => {
+    currentSession.direction.tasks = document.getElementById('dir-tasks').value.trim();
+    document.getElementById('dir-s2').style.display = 'none';
+    document.getElementById('dir-s3').style.display = 'block';
+    document.getElementById('dir-step').focus();
+  });
+
+  document.getElementById('dir-s3-next').addEventListener('click', () => {
+    currentSession.direction.smallStep = document.getElementById('dir-step').value.trim();
+    renderEmotionCheckScreen();
+    showScreen('screen-emotion');
+  });
+
+  document.getElementById('dir-focus').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('dir-s1-next').click();
+  });
+
+  document.getElementById('dir-step').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('dir-s3-next').click();
+  });
+}
