@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cold Start — Tests</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #f9f9f9; }
+    .pass { color: #2d7a2d; }
+    .fail { color: #c0392b; font-weight: bold; }
+    h1 { font-size: 1rem; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Cold Start — Unit Tests</h1>
+  <div id="results"></div>
+  <script src="app.js"></script>
+  <script>
+    const results = document.getElementById('results');
+    let passed = 0, failed = 0;
+
+    function test(name, fn) {
+      try {
+        fn();
+        results.innerHTML += `<p class="pass">✓ ${name}</p>`;
+        passed++;
+      } catch (e) {
+        results.innerHTML += `<p class="fail">✗ ${name}: ${e.message}</p>`;
+        failed++;
+      }
+    }
+
+    function assert(condition, message) {
+      if (!condition) throw new Error(message || 'Assertion failed');
+    }
+
+    function assertEqual(a, b) {
+      if (a !== b) throw new Error(`Expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`);
+    }
+
+    // ── tests added in Tasks 3 and 4 ──
+
+    results.innerHTML += `<hr><p><strong>${passed} passed, ${failed} failed</strong></p>`;
+  </script>
+</body>
+</html>
