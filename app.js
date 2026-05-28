@@ -624,6 +624,7 @@ function renderBreathingScreen() {
         </div>
         <div class="btn-row">
           <button class="btn" id="breath-ready">Begin breathing →</button>
+          <button class="btn btn-ghost" id="breath-skip-prep">Skip →</button>
         </div>
       </div>
 
@@ -633,6 +634,9 @@ function renderBreathingScreen() {
         </div>
         <div id="breathing-done-row" class="btn-row" style="display:none">
           <button class="btn" id="breathing-done">Continue →</button>
+        </div>
+        <div class="btn-row" style="margin-top:0.5rem">
+          <button class="btn btn-ghost" id="breath-skip-practice">Skip breathing →</button>
         </div>
       </div>
     </div>
@@ -687,6 +691,17 @@ function renderBreathingScreen() {
 
     // One frame so the circle settles before the first breath starts
     requestAnimationFrame(() => runBreathingRound(0));
+  });
+
+  document.getElementById('breath-skip-prep').addEventListener('click', () => {
+    clearTimeout(previewTimer);
+    renderGroundingScreen();
+    showScreen('screen-grounding');
+  });
+
+  document.getElementById('breath-skip-practice').addEventListener('click', () => {
+    renderGroundingScreen();
+    showScreen('screen-grounding');
   });
 }
 
@@ -795,6 +810,17 @@ function renderGroundingScreen() {
       btnRow.style.opacity = '1';
       const isLast = i === GROUNDING_PROMPTS.length - 1;
       nextBtn.textContent = isLast ? 'Continue →' : 'Next';
+
+      // Add back button for prompts 1 and 2
+      if (i > 0) {
+        const backBtn = document.createElement('button');
+        backBtn.className = 'btn btn-ghost';
+        backBtn.textContent = '← Back';
+        backBtn.style.marginRight = '12px';
+        backBtn.onclick = () => { idx = i - 1; showPrompt(idx); };
+        btnRow.insertBefore(backBtn, nextBtn);
+      }
+
       nextBtn.onclick = () => {
         if (isLast) {
           renderDirectionScreen();
@@ -991,10 +1017,16 @@ function renderEmotionCheckScreen() {
         Let's look at each of these, starting from the deepest.
       </p>
       <div class="btn-row" style="margin-top:1.5rem">
+        <button class="btn btn-ghost" id="review-back">← Back</button>
         <button class="btn" id="review-next">Look closer →</button>
         <button class="btn btn-ghost" id="review-skip">I'm ready to begin</button>
       </div>
     `;
+    document.getElementById('review-back').addEventListener('click', () => {
+      review.style.display = 'none';
+      document.getElementById('emotion-prompts').style.display = 'block';
+      showEmotionPrompt(EMOTION_PROMPTS.length - 1);
+    });
     document.getElementById('review-skip').addEventListener('click', () => {
       currentSession.emotionCheck = emotionValues;
       appState = saveSession(appState, currentSession);
@@ -1132,6 +1164,61 @@ async function renderProjectsScreen() {
           `).join('');
     });
   }
+
+  // "Other" card — unregistered project
+  const otherCard = document.createElement('div');
+  otherCard.className = 'project-card';
+  otherCard.innerHTML = `
+    <h3 style="color:var(--text-muted)">Other</h3>
+    <p class="desc">Something not listed here</p>
+  `;
+  otherCard.addEventListener('click', () => selectOtherProject());
+  container.appendChild(otherCard);
+}
+
+function selectOtherProject() {
+  currentSession.chosenProjectId = null;
+  renderOtherFirstStepScreen();
+  showScreen('screen-begin');
+}
+
+function renderOtherFirstStepScreen() {
+  document.getElementById('screen-begin').innerHTML = `
+    <div class="col">
+      <div class="field" style="margin-bottom:1.5rem">
+        <label for="other-project-name" style="font-family:var(--font-serif); font-size:1rem; text-transform:none; letter-spacing:0; color:var(--text); line-height:1.7">
+          What are you working on?
+        </label>
+        <input id="other-project-name" type="text" autocomplete="off" style="margin-top:0.75rem" placeholder="Project or task name">
+      </div>
+      <div class="field">
+        <label for="other-first-step" style="font-family:var(--font-serif); font-size:1rem; text-transform:none; letter-spacing:0; color:var(--text); line-height:1.7">
+          What is one small, concrete first step?
+        </label>
+        <input id="other-first-step" type="text" autocomplete="off" style="margin-top:0.75rem">
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="other-begin">Begin →</button>
+      </div>
+    </div>
+  `;
+
+  setTimeout(() => document.getElementById('other-project-name').focus(), 50);
+
+  document.getElementById('other-begin').addEventListener('click', () => {
+    const name = document.getElementById('other-project-name').value.trim() || 'Other';
+    const step = document.getElementById('other-first-step').value.trim() || 'Begin.';
+    currentSession.direction.smallStep = step;
+    appState = saveSession(appState, currentSession);
+    saveState(appState);
+
+    document.getElementById('screen-begin').innerHTML = `
+      <div class="col">
+        <p class="begin-project">${escapeHtml(name)}</p>
+        <p class="begin-step">${escapeHtml(step)}</p>
+      </div>
+    `;
+  });
 }
 
 function selectProject(projectId) {
