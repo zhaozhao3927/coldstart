@@ -636,8 +636,9 @@ function renderBreathingScreen() {
         <div id="breathing-done-row" class="btn-row" style="display:none">
           <button class="btn" id="breathing-done">Continue →</button>
         </div>
-        <div class="btn-row" style="margin-top:0.5rem">
-          <button class="btn btn-ghost" id="breath-skip-round">Skip this round →</button>
+        <div class="btn-row" style="margin-top:0.5rem; gap:10px">
+          <button class="btn btn-ghost" id="breath-back-round" style="display:none">← Previous practice</button>
+          <button class="btn btn-ghost" id="breath-skip-round">Skip to the next breathing practice</button>
         </div>
       </div>
     </div>
@@ -726,13 +727,27 @@ function runBreathingRound(roundIndex) {
   document.getElementById('breathing-next-row').style.display = 'none';
   document.getElementById('breathing-done-row').style.display = 'none';
 
-  // Update skip button label to show what you'll skip to
+  // Skip button — same label for all rounds
   const skipBtn = document.getElementById('breath-skip-round');
-  if (skipBtn) {
-    if (roundIndex < BREATHING_ROUNDS.length - 1) {
-      skipBtn.textContent = `Skip to ${BREATHING_ROUNDS[roundIndex + 1].name} →`;
+  if (skipBtn) skipBtn.textContent = 'Skip to the next breathing practice';
+
+  // Back button — visible for rounds 1 and 2 only
+  const backBtn = document.getElementById('breath-back-round');
+  if (backBtn) {
+    if (roundIndex > 0) {
+      backBtn.style.display = 'inline-block';
+      backBtn.onclick = () => {
+        clearTimeout(breathTimeout);
+        const circle = document.getElementById('breath-circle');
+        if (circle) {
+          circle.style.transition = 'none';
+          circle.classList.remove('inhaling');
+          circle.classList.add('exhaling');
+        }
+        requestAnimationFrame(() => runBreathingRound(roundIndex - 1));
+      };
     } else {
-      skipBtn.textContent = 'Skip to next step →';
+      backBtn.style.display = 'none';
     }
   }
 
