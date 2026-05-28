@@ -638,7 +638,7 @@ function renderBreathingScreen() {
         </div>
         <div class="btn-row" style="margin-top:0.5rem; gap:10px">
           <button class="btn btn-ghost" id="breath-back-round" style="display:none">← Previous practice</button>
-          <button class="btn btn-ghost" id="breath-skip-round">Skip to the next breathing practice</button>
+          <button class="btn btn-ghost" id="breath-skip-round">Skip</button>
         </div>
       </div>
     </div>
@@ -729,7 +729,7 @@ function runBreathingRound(roundIndex) {
 
   // Skip button — same label for all rounds
   const skipBtn = document.getElementById('breath-skip-round');
-  if (skipBtn) skipBtn.textContent = 'Skip to the next breathing practice';
+  if (skipBtn) skipBtn.textContent = 'Skip';
 
   // Back button — visible for rounds 1 and 2 only
   const backBtn = document.getElementById('breath-back-round');
