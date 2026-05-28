@@ -56,6 +56,7 @@ function parseGitHubUrl(url) {
 
 function formatRelativeDate(isoString) {
   const diff = Date.now() - new Date(isoString).getTime();
+  if (isNaN(diff)) return 'unknown';
   const mins  = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days  = Math.floor(diff / 86400000);
@@ -78,8 +79,8 @@ async function fetchCommits(githubUrl, pat) {
     const commits = await res.json();
     return commits.map(c => ({
       message: c.commit.message.split('\n')[0],
-      author:  c.commit.author.name,
-      date:    formatRelativeDate(c.commit.author.date)
+      author:  c.commit.author?.name ?? '',
+      date:    formatRelativeDate(c.commit.author?.date ?? '')
     }));
   } catch {
     return [];
