@@ -125,3 +125,63 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// ── Setup screen ───────────────────────────────────────────────────────────
+function renderSetupScreen() {
+  document.getElementById('screen-setup').innerHTML = `
+    <div class="col">
+      <h1>Welcome</h1>
+      <p class="muted" style="margin-bottom:2.5rem;">
+        Add your first project to get started. You can add more later via ⚙.
+      </p>
+
+      <div class="field">
+        <label for="setup-name">Project name</label>
+        <input id="setup-name" type="text" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="setup-desc">Description</label>
+        <textarea id="setup-desc" rows="2"></textarea>
+      </div>
+      <div class="field">
+        <label for="setup-url">GitHub repository URL</label>
+        <input id="setup-url" type="url" placeholder="https://github.com/you/repo">
+      </div>
+      <div class="field">
+        <label for="setup-pat">
+          GitHub Personal Access Token
+          <span class="muted" style="text-transform:none; letter-spacing:0"> — optional, for private repos</span>
+        </label>
+        <input id="setup-pat" type="password" placeholder="ghp_...">
+        <p class="muted" style="margin-top:6px;">Stored only in this browser. Only sent to GitHub's API.</p>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" id="setup-submit">Begin →</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('setup-submit').addEventListener('click', () => {
+    const name       = document.getElementById('setup-name').value.trim();
+    const description = document.getElementById('setup-desc').value.trim();
+    const githubUrl  = document.getElementById('setup-url').value.trim();
+    const pat        = document.getElementById('setup-pat').value.trim();
+
+    if (!name || !githubUrl) {
+      alert('Please enter a project name and GitHub URL.');
+      return;
+    }
+    if (!parseGitHubUrl(githubUrl)) {
+      alert('Please use a valid GitHub URL: https://github.com/owner/repo');
+      return;
+    }
+
+    appState = addProject(appState, { name, description, githubUrl });
+    if (pat) appState = { ...appState, githubPAT: pat };
+    saveState(appState);
+
+    renderChoiceScreen();
+    showScreen('screen-choice');
+  });
+}
