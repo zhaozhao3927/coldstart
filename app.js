@@ -624,7 +624,7 @@ function renderBreathingScreen() {
         </div>
         <div class="btn-row">
           <button class="btn" id="breath-ready">Begin breathing →</button>
-          <button class="btn btn-ghost" id="breath-skip-prep">Skip →</button>
+          <button class="btn btn-ghost" id="breath-skip-prep">Skip breathing entirely →</button>
         </div>
       </div>
 
@@ -636,7 +636,7 @@ function renderBreathingScreen() {
           <button class="btn" id="breathing-done">Continue →</button>
         </div>
         <div class="btn-row" style="margin-top:0.5rem">
-          <button class="btn btn-ghost" id="breath-skip-practice">Skip breathing →</button>
+          <button class="btn btn-ghost" id="breath-skip-practice">Skip breathing entirely →</button>
         </div>
       </div>
     </div>
@@ -810,16 +810,6 @@ function renderGroundingScreen() {
       btnRow.style.opacity = '1';
       const isLast = i === GROUNDING_PROMPTS.length - 1;
       nextBtn.textContent = isLast ? 'Continue →' : 'Next';
-
-      // Add back button for prompts 1 and 2
-      if (i > 0) {
-        const backBtn = document.createElement('button');
-        backBtn.className = 'btn btn-ghost';
-        backBtn.textContent = '← Back';
-        backBtn.style.marginRight = '12px';
-        backBtn.onclick = () => { idx = i - 1; showPrompt(idx); };
-        btnRow.insertBefore(backBtn, nextBtn);
-      }
 
       nextBtn.onclick = () => {
         if (isLast) {
