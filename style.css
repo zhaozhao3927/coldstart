@@ -387,6 +387,70 @@ label {
   margin: 0 auto;
 }
 
+/* ── Project tasks ─────────────────────────────────────────────────────── */
+.task-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.task-text {
+  flex: 1;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.task-item-done .task-text {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--accent-light);
+}
+
+.task-empty {
+  font-size: 0.85rem;
+  padding: 4px 0 8px;
+}
+
+.task-add-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.task-input {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  color: var(--text);
+  outline: none;
+}
+
+.task-input:focus { border-bottom-color: var(--accent); }
+
+.task-history-toggle {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  padding: 10px 0 4px;
+  margin-top: 0.5rem;
+}
+
+.task-history-toggle:hover { color: var(--text); }
+
 /* ── Accessibility ─────────────────────────────────────────────────────── */
 button:focus-visible,
 a:focus-visible,

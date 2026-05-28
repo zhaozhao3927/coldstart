@@ -19,8 +19,40 @@ function saveState(state) {
 }
 
 function addProject(state, { name, description, githubUrl }) {
-  const project = { id: crypto.randomUUID(), name, description, githubUrl };
+  const project = { id: crypto.randomUUID(), name, description, githubUrl, tasks: [] };
   return { ...state, projects: [...state.projects, project] };
+}
+
+function addTask(state, projectId, text) {
+  const task = { id: crypto.randomUUID(), text, status: 'todo', createdAt: new Date().toISOString(), completedAt: null };
+  return {
+    ...state,
+    projects: state.projects.map(p =>
+      p.id === projectId ? { ...p, tasks: [...(p.tasks || []), task] } : p
+    )
+  };
+}
+
+function completeTask(state, projectId, taskId) {
+  return {
+    ...state,
+    projects: state.projects.map(p =>
+      p.id === projectId
+        ? { ...p, tasks: (p.tasks || []).map(t =>
+            t.id === taskId ? { ...t, status: 'done', completedAt: new Date().toISOString() } : t
+          )}
+        : p
+    )
+  };
+}
+
+function deleteTask(state, projectId, taskId) {
+  return {
+    ...state,
+    projects: state.projects.map(p =>
+      p.id === projectId ? { ...p, tasks: (p.tasks || []).filter(t => t.id !== taskId) } : p
+    )
+  };
 }
 
 function updateProject(state, id, fields) {
@@ -203,7 +235,32 @@ function closeSettings() {
 function renderSettingsOverlay() {
   const projectsHtml = appState.projects.length === 0
     ? '<p class="muted">No projects yet.</p>'
-    : appState.projects.map(p => `
+    : appState.projects.map(p => {
+        const tasks   = p.tasks || [];
+        const todos   = tasks.filter(t => t.status === 'todo');
+        const done    = tasks.filter(t => t.status === 'done').sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+
+        const todoHtml = todos.length === 0
+          ? '<p class="muted task-empty">Nothing to do yet.</p>'
+          : todos.map(t => `
+              <div class="task-item">
+                <span class="task-text">${escapeHtml(t.text)}</span>
+                <button class="btn btn-ghost btn-sm" onclick="doCompleteTask('${p.id}','${t.id}')">Done</button>
+              </div>`).join('');
+
+        const historyHtml = done.length === 0 ? '' : `
+          <button class="task-history-toggle" onclick="toggleTaskHistory('${p.id}')">
+            ▸ History (${done.length} completed)
+          </button>
+          <div id="task-history-${p.id}" style="display:none">
+            ${done.map(t => `
+              <div class="task-item task-item-done">
+                <span class="task-text">✓ ${escapeHtml(t.text)}</span>
+                <span class="muted" style="font-size:0.75rem; flex-shrink:0">${formatRelativeDate(t.completedAt)}</span>
+              </div>`).join('')}
+          </div>`;
+
+        return `
         <div class="project-item" id="project-item-${p.id}">
           <div class="project-item-info">
             <strong>${escapeHtml(p.name)}</strong>
@@ -211,10 +268,22 @@ function renderSettingsOverlay() {
             <div class="muted" style="margin-top:3px; font-size:0.78rem">${p.githubUrl ? escapeHtml(p.githubUrl) : 'No repository URL'}</div>
           </div>
           <div class="project-item-actions">
+            <button class="btn btn-ghost btn-sm" onclick="toggleProjectTasks('${p.id}')">Tasks</button>
             <button class="btn btn-ghost btn-sm" onclick="toggleEditProject('${p.id}')">Edit</button>
             <button class="btn btn-ghost btn-sm" onclick="confirmDeleteProject('${p.id}')">Delete</button>
           </div>
         </div>
+
+        <div id="project-tasks-${p.id}" style="display:none; padding:1rem 0 1.5rem; border-bottom:1px solid var(--border)">
+          <p class="eyebrow" style="margin-bottom:1rem">To do</p>
+          <div id="todo-list-${p.id}">${todoHtml}</div>
+          <div class="task-add-row">
+            <input type="text" id="new-task-${p.id}" placeholder="Add a task…" class="task-input" autocomplete="off">
+            <button class="btn btn-sm" onclick="doAddTask('${p.id}')">Add</button>
+          </div>
+          ${historyHtml}
+        </div>
+
         <div id="project-edit-${p.id}" style="display:none; padding:1rem 0 1.5rem; border-bottom:1px solid var(--border)">
           <div class="field">
             <label>Name</label>
@@ -232,8 +301,8 @@ function renderSettingsOverlay() {
             <button class="btn" onclick="saveEditProject('${p.id}')">Save</button>
             <button class="btn btn-ghost" onclick="toggleEditProject('${p.id}')">Cancel</button>
           </div>
-        </div>
-      `).join('');
+        </div>`;
+      }).join('');
 
   document.getElementById('settings-overlay').innerHTML = `
     <div class="col">
@@ -281,6 +350,14 @@ function renderSettingsOverlay() {
       <button class="btn" onclick="savePAT()">Save token</button>
     </div>
   `;
+
+  // Enter key on task inputs
+  appState.projects.forEach(p => {
+    const input = document.getElementById(`new-task-${p.id}`);
+    if (input) input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') doAddTask(p.id);
+    });
+  });
 }
 
 function toggleEditProject(id) {
@@ -302,6 +379,48 @@ function saveEditProject(id) {
   appState = updateProject(appState, id, { name, description, githubUrl });
   saveState(appState);
   renderSettingsOverlay();
+}
+
+function toggleProjectTasks(id) {
+  const div = document.getElementById(`project-tasks-${id}`);
+  const item = document.getElementById(`project-item-${id}`);
+  if (!div) return;
+  const isOpen = div.style.display !== 'none';
+  div.style.display = isOpen ? 'none' : 'block';
+  if (item) item.style.opacity = isOpen ? '1' : '0.5';
+  if (!isOpen) document.getElementById(`new-task-${id}`).focus();
+}
+
+function doAddTask(projectId) {
+  const input = document.getElementById(`new-task-${projectId}`);
+  const text  = input ? input.value.trim() : '';
+  if (!text) return;
+  appState = addTask(appState, projectId, text);
+  saveState(appState);
+  renderSettingsOverlay();
+  // Reopen the tasks panel after re-render
+  toggleProjectTasks(projectId);
+}
+
+function doCompleteTask(projectId, taskId) {
+  appState = completeTask(appState, projectId, taskId);
+  saveState(appState);
+  renderSettingsOverlay();
+  toggleProjectTasks(projectId);
+  // Show history so user sees where the item went
+  const hist = document.getElementById(`task-history-${projectId}`);
+  if (hist) hist.style.display = 'block';
+}
+
+function toggleTaskHistory(projectId) {
+  const hist = document.getElementById(`task-history-${projectId}`);
+  const btn  = hist && hist.previousElementSibling;
+  if (!hist) return;
+  const isOpen = hist.style.display !== 'none';
+  hist.style.display = isOpen ? 'none' : 'block';
+  if (btn) btn.textContent = isOpen
+    ? btn.textContent.replace('▾', '▸')
+    : btn.textContent.replace('▸', '▾');
 }
 
 function confirmDeleteProject(id) {
